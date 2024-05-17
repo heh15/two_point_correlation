@@ -1,0 +1,262 @@
+import sys
+sys.path.append('../')
+sys.path.append('../aklpyutils/') 
+
+from key_dirs import *
+from utils_spacing import *
+from astropy.utils.console import ProgressBar
+
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Define bins and other tuning parameters
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+log_xmin = 1.0
+log_xbin = 0.1
+log_xlo = log_xmin + np.arange(31)*log_xbin
+log_xhi = log_xlo + log_xbin
+
+bins_lo = 10.**(log_xlo)
+bins_hi = 10.**(log_xhi)
+bins_mid = (bins_lo+bins_hi)*0.5
+bins_geo = np.sqrt(bins_lo*bins_hi)
+nbins = len(bins_lo)
+
+thresh_cloud_count = 5
+cat_iter_fac = 100
+exp_vs_flat_fac = 10
+
+do_exp_vs_flat = True
+do_monte = True
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Loop over sources
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+for this_source in source_list:
+    
+    # Define output filenames
+    tabfile_real_vs_flat = corr_dir + this_source + '_150pc_realvsflat.fits'
+    tabfile_real_vs_exp = corr_dir + this_source + '_150pc_realvsexp.fits'
+    tabfile_exp_vs_flat = corr_dir + this_source + '_150pc_expvsflat.fits'
+    
+    # Extract source information
+    this_row = deets_dict[this_source] 
+    this_ra = this_row['orient_ra']
+    this_dec = this_row['orient_dec']
+    this_pa = this_row['orient_posang']
+    this_incl = this_row['orient_incl']
+    this_dist = this_row['dist']
+    this_center_coord = [this_ra, this_dec]
+
+    # Deg to physics
+    deg_to_pc = this_dist*1e6*np.pi/180.
+    
+    # Read fiducial catalog
+    this_real_cat = Table.read(fid_cat_dict[this_source].replace('_props.fits','_props_valueadded.fits'))
+    if len(this_real_cat) < thresh_cloud_count:
+        continue
+    x_real = this_real_cat['DELTAX_DEG']*deg_to_pc
+    y_real = this_real_cat['DELTAY_DEG']*deg_to_pc
+    n_clouds = len(this_real_cat)
+
+    n_sim_to_use = n_clouds*cat_iter_fac
+    n_for_exp_vs_flat = n_clouds*exp_vs_flat_fac
+    
+    # Read the random catalogs and recast variables
+
+    # ... exponential catalog
+    exp_sim_dir = sim_dir + 'exp/'
+    this_exp_cat_file = exp_sim_dir+this_source+'_exp_150pc.fits'
+    this_exp_cat = Table.read(this_exp_cat_file)
+
+    x_exp = this_exp_cat['dx']*deg_to_pc
+    y_exp = this_exp_cat['dy']*deg_to_pc
+
+    x_exp = x_exp[0:n_sim_to_use]
+    y_exp = y_exp[0:n_sim_to_use]
+    
+    n_exp = len(x_exp)
+    
+    # ... flat catalog
+    flat_sim_dir = sim_dir + 'flat/'
+    this_flat_cat_file = flat_sim_dir+this_source+'_flat_150pc.fits'
+    this_flat_cat = Table.read(this_flat_cat_file)
+
+    x_flat = this_flat_cat['dx']*deg_to_pc
+    y_flat = this_flat_cat['dy']*deg_to_pc
+
+    x_flat = x_flat[0:n_sim_to_use]
+    y_flat = y_flat[0:n_sim_to_use]
+
+    n_flat = len(x_flat)
+
+    if verbose:
+        print("")
+        print("... galaxy: ", this_source)
+        print("... real peaks: ", n_clouds)
+        print("... flat peaks: ", n_flat)
+        print("... exp peaks: ", n_exp)
+        print("")
+    
+    # Calculate fiducial correlations
+
+    # ... real vs. flat
+    print("... calculating real vs. flat")
+    twopt_real_flat = \
+        calc_twopoint(
+            x_real, y_real,
+            x_flat, y_flat,
+            bins_lo, bins_hi)
+    
+    # ... real vs. exponential
+    print("... calculating real vs. exp")
+    twopt_real_exp = \
+        calc_twopoint(
+            x_real, y_real,
+            x_exp, y_exp,
+            bins_lo, bins_hi)
+    
+    # ... exponential vs. flat
+    if do_exp_vs_flat:
+        print("... calculating exp vs. flat")
+        twopt_exp_flat = \
+            calc_twopoint(
+                x_exp[0:n_for_exp_vs_flat], y_exp[0:n_for_exp_vs_flat],
+                x_flat, y_flat,
+                bins_lo, bins_hi)
+    else:
+        twopt_exp_flat = twopt_real_flat*np.nan
+    
+    # Loop over realizations of random catalogs
+    monte_flat_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
+    monte_exp_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
+
+    print("... monte carlo calculation")
+    counter = 0
+    
+    with ProgressBar(cat_iter_fac) as bar:
+        
+        for ii in range(cat_iter_fac):
+
+            if do_monte == False:
+                continue
+
+            # Generate false data - note that the split avoid overlap
+            # at low distance by construction.
+            
+            exp_mask = np.zeros_like(x_exp)
+            exp_mask[counter:counter+n_clouds] = 1
+
+            flat_mask = np.zeros_like(x_flat)
+            flat_mask[counter:counter+n_clouds] = 1
+            
+            monte_exp_x_data = x_exp[exp_mask==1]
+            monte_exp_y_data = y_exp[exp_mask==1]
+
+            monte_exp_x_rand = x_exp[exp_mask==0]
+            monte_exp_y_rand = y_exp[exp_mask==0]
+            
+            monte_flat_x_data = x_flat[flat_mask==1]
+            monte_flat_y_data = y_flat[flat_mask==1]
+
+            monte_flat_x_rand = x_flat[flat_mask==0]
+            monte_flat_y_rand = y_flat[flat_mask==0]
+            
+            counter += n_clouds
+
+            this_twopt_monte_flat = \
+                calc_twopoint(
+                    monte_flat_x_data, monte_flat_y_data,
+                    monte_flat_x_rand, monte_flat_y_rand,
+                    bins_lo, bins_hi, verbose=False)
+        
+            this_twopt_monte_exp = \
+                calc_twopoint(
+                    monte_exp_x_data, monte_exp_y_data,
+                    monte_exp_x_rand, monte_exp_y_rand,
+                    bins_lo, bins_hi, verbose=False)
+            
+            monte_flat_twopt[ii,:] = this_twopt_monte_flat
+            monte_exp_twopt[ii,:] = this_twopt_monte_exp
+
+            bar.update()
+        
+    # Produce final data table
+
+    print("... making table and writing to disk")
+    
+    monte_flat_05 = np.zeros(nbins)*np.nan
+    monte_flat_16 = np.zeros(nbins)*np.nan
+    monte_flat_50 = np.zeros(nbins)*np.nan
+    monte_flat_84 = np.zeros(nbins)*np.nan
+    monte_flat_95 = np.zeros(nbins)*np.nan
+
+    monte_exp_05 = np.zeros(nbins)*np.nan
+    monte_exp_16 = np.zeros(nbins)*np.nan
+    monte_exp_50 = np.zeros(nbins)*np.nan
+    monte_exp_84 = np.zeros(nbins)*np.nan
+    monte_exp_95 = np.zeros(nbins)*np.nan
+    
+    for ii in range(nbins):
+
+        if do_monte == False:
+            continue
+            
+        this_monte_flat_bin = monte_flat_twopt[:,ii]
+        this_monte_exp_bin = monte_exp_twopt[:,ii]
+        
+        monte_flat_05[ii] = np.percentile(this_monte_flat_bin,5)
+        monte_flat_16[ii] = np.percentile(this_monte_flat_bin,16)
+        monte_flat_50[ii] = np.percentile(this_monte_flat_bin,50)
+        monte_flat_84[ii] = np.percentile(this_monte_flat_bin,84)
+        monte_flat_95[ii] = np.percentile(this_monte_flat_bin,95)
+
+        monte_exp_05[ii] = np.percentile(this_monte_exp_bin,5)
+        monte_exp_16[ii] = np.percentile(this_monte_exp_bin,16)
+        monte_exp_50[ii] = np.percentile(this_monte_exp_bin,50)
+        monte_exp_84[ii] = np.percentile(this_monte_exp_bin,84)
+        monte_exp_95[ii] = np.percentile(this_monte_exp_bin,95)
+              
+    # Write to disk
+    twopt_real_vs_flat = {
+        'xlo':bins_lo,
+        'xmid':bins_mid,
+        'xgeo':bins_geo,
+        'xhi':bins_hi,
+        'twopt':twopt_real_flat,
+        'monte05':monte_flat_05,
+        'monte16':monte_flat_16,
+        'monte50':monte_flat_50,
+        'monte84':monte_flat_84,
+        'monte95':monte_flat_95,
+    }
+    tab_real_vs_flat = Table(twopt_real_vs_flat)
+    tab_real_vs_flat.write(tabfile_real_vs_flat,format='fits',overwrite=True)
+    
+    twopt_real_vs_exp = {
+        'xlo':bins_lo,
+        'xmid':bins_mid,
+        'xgeo':bins_geo,
+        'xhi':bins_hi,
+        'twopt':twopt_real_exp,
+        'monte05':monte_exp_05,
+        'monte16':monte_exp_16,
+        'monte50':monte_exp_50,
+        'monte84':monte_exp_84,
+        'monte95':monte_exp_95,
+    }
+    tab_real_vs_exp = Table(twopt_real_vs_exp)
+    tab_real_vs_exp.write(tabfile_real_vs_exp,format='fits',overwrite=True)
+    
+    twopt_exp_vs_flat = {
+        'xlo':bins_lo,
+        'xmid':bins_mid,
+        'xgeo':bins_geo,
+        'xhi':bins_hi,
+        'twopt':twopt_exp_flat,
+    }
+    tab_exp_vs_flat = Table(twopt_exp_vs_flat)
+    tab_exp_vs_flat.write(tabfile_exp_vs_flat,format='fits',overwrite=True)
+    
+    

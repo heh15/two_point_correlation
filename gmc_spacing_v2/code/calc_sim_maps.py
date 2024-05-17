@@ -1,0 +1,70 @@
+import sys
+sys.path.append('../')
+sys.path.append('../aklpyutils/')
+
+from key_dirs import *
+from aklpyutils.utils_spacing import *
+
+dry_run = False
+verbose = True
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Place gaussians at each catalog peak
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+for this_source in source_list:
+
+    print("")
+    print("Making a mock source map for ", this_source)
+    print("")
+    
+    # Extract details for this source
+    this_row = deets_dict[this_source]
+    this_ra = this_row['orient_ra']
+    this_dec = this_row['orient_dec']
+    this_pa = this_row['orient_posang']
+    this_incl = this_row['orient_incl']
+    this_dist = this_row['dist']
+    this_lstar_deg = this_row['size_scalelength']/3600.
+
+    # Get the catalog
+    this_cat_file = fid_cat_dict[this_source]
+    
+    # Read the catalog
+    this_cat = Table.read(this_cat_file)
+    peak_ra = np.array(this_cat['XMAX_DEG'])
+    peak_dec = np.array(this_cat['YMAX_DEG'])
+        
+    # Extract the moment0 file
+    this_mom0_file = mom0_map_dict[this_source]
+    
+    # Read the file
+    hdulist = fits.open(this_mom0_file)
+    mom0_map = hdulist[0].data
+
+    # Make coordinates
+    hdr = hdulist[0].header
+    wcs = WCS(hdr, naxis=2)
+    naxis = wcs._naxis
+    grid  = np.indices((naxis[1],naxis[0]))
+    ra_map, dec_map  = wcs.wcs_pix2world(grid[1],grid[0],0)
+
+    # Peak positions
+    x_map, y_map  = wcs.wcs_world2pix(peak_ra,peak_dec,0)
+    peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
+    
+    # Make the model map
+    peak_fwhm = hdr['BMAJ']
+    mock_map = make_mock_image(
+        peak_val, peak_ra, peak_dec, peak_fwhm,
+        ra_map, dec_map, mask_to_blank=(np.isfinite(mom0_map)==False))
+
+    # Scale up the model map to conserve the flux
+    scale_factor = np.nansum(mom0_map) / np.nansum(mock_map)
+    print(scale_factor)
+
+    # Write to disk
+    model_file = mod_map_dir+this_source+'_source_model_150pc.fits'
+#     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
+    model_hdu = fits.PrimaryHDU(data=mock_map,header=hdr)
+    model_hdu.writeto(model_file, overwrite=True)
