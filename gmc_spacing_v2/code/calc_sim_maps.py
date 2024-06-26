@@ -18,7 +18,6 @@ verbose = True
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 scale_factors = []
-source_list = ['ic1954']
 
 for this_source in source_list:
 
@@ -41,8 +40,8 @@ for this_source in source_list:
     # Read the catalog
     this_cat = Table.read(this_cat_file)
     peak_ra = np.array(this_cat['XMAX_DEG'])
-    peak_dec = np.array(this_cat['YMAX_DEG'])
-        
+    peak_dec = np.array(this_cat['YMAX_DEG']) 
+    flux_val = np.array(this_cat['FLUX_KKMS_PC2'])
     # Extract the moment0 file
     this_mom0_file = mom0_map_dict[this_source]
     
@@ -59,12 +58,11 @@ for this_source in source_list:
 
     # Peak positions
     x_map, y_map  = wcs.wcs_world2pix(peak_ra,peak_dec,0)
-    peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-    
+#    peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]   
     # Make the model map
     peak_fwhm = hdr['BMAJ']
     mock_map = make_mock_image(
-        peak_val, peak_ra, peak_dec, peak_fwhm,
+        flux_val, peak_ra, peak_dec, peak_fwhm,
         ra_map, dec_map, mask_to_blank=(np.isfinite(mom0_map)==False))
 
     # Scale up the model map to conserve the flux
