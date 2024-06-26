@@ -1,9 +1,13 @@
 import sys
 sys.path.append('../')
-sys.path.append('../aklpyutils/')
+# sys.path.append('../aklpyutils/')
+
+import matplotlib.pyplot as plt
+import pickle
 
 from key_dirs import *
-from aklpyutils.utils_spacing import *
+# from aklpyutils.utils_spacing import *
+from utilsForTwopt.utils_spacing import *
 
 dry_run = False
 verbose = True
@@ -11,6 +15,8 @@ verbose = True
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Place gaussians at each catalog peak
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+scale_factors = []
 
 for this_source in source_list:
 
@@ -62,9 +68,18 @@ for this_source in source_list:
     # Scale up the model map to conserve the flux
     scale_factor = np.nansum(mom0_map) / np.nansum(mock_map)
     print(scale_factor)
+    scale_factors.append(scale_factor)
 
-    # Write to disk
-    model_file = mod_map_dir+this_source+'_source_model_150pc.fits'
-#     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
-    model_hdu = fits.PrimaryHDU(data=mock_map,header=hdr)
-    model_hdu.writeto(model_file, overwrite=True)
+#     # Write to disk
+#     model_file = mod_map_dir+this_source+'_source_model_150pc.fits'
+# #     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
+#     model_hdu = fits.PrimaryHDU(data=mock_map,header=hdr)
+#     model_hdu.writeto(model_file, overwrite=True)
+
+galaxy_fluxes = {}
+galaxy_fluxes['Name'] = source_list
+galaxy_fluxes['ratio'] = scale_factors
+
+with open('galaxy_fluxes.pkl', 'wb') as fp:
+    pickle.dump(galaxy_fluxes, fp)
+    print('dictionary saved successfully to file')
