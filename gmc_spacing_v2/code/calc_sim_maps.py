@@ -1,6 +1,7 @@
 import sys
 sys.path.append('../')
 # sys.path.append('../aklpyutils/')
+sys.path.append('../utilsForTwopt/')
 
 import matplotlib.pyplot as plt
 import pickle
@@ -17,6 +18,7 @@ verbose = True
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 scale_factors = []
+source_list = ['ic1954']
 
 for this_source in source_list:
 
