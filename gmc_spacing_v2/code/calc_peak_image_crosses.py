@@ -1,8 +1,9 @@
 import sys
 sys.path.append('../')
-sys.path.append('../aklpyutils/')
+# sys.path.append('../aklpyutils/')
+sys.path.append('../utilsForTwopt/')
 from key_dirs import *
-from aklpyutils.utils_spacing import *
+from utilsForTwopt.utils_spacing import *
 
 dry_run = False
 verbose = True
@@ -120,7 +121,7 @@ for this_source in source_list:
             peak_val*0.0+1.0, peak_deltax, peak_deltay,
             model_map, map_deltax, map_deltay,
             bins_lo, bins_hi)
-    print(all_model_crosses)
+    # print(all_model_crosses)
     
     outfile_name = outfile_dir + this_source + '_modelcross.fits'
 
