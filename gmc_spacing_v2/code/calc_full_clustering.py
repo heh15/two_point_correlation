@@ -26,8 +26,8 @@ thresh_cloud_count = 5
 cat_iter_fac = 100
 exp_vs_flat_fac = 10
 
-do_exp_vs_flat = True
-do_monte = True
+do_exp_vs_flat = False
+do_monte = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Loop over sources
@@ -39,6 +39,8 @@ for this_source in source_list:
     tabfile_real_vs_flat = corr_dir + this_source + '_150pc_realvsflat.fits'
     tabfile_real_vs_exp = corr_dir + this_source + '_150pc_realvsexp.fits'
     tabfile_exp_vs_flat = corr_dir + this_source + '_150pc_expvsflat.fits'
+    tabfile_real_vs_Ico = corr_dir + this_source + '_150pc_realvsIco.fits'
+    tabfile_Ico_vs_exp = corr_dir + this_source + '_150pc_Icovsexp.fits'
     
     # Extract source information
     this_row = deets_dict[this_source] 
@@ -91,6 +93,19 @@ for this_source in source_list:
 
     n_flat = len(x_flat)
 
+    # ... Ico catalog
+    Ico_sim_dir = sim_dir + 'Ico/'
+    this_Ico_cat_file = Ico_sim_dir+this_source+'_Ico_150pc.fits'
+    this_Ico_cat = Table.read(this_Ico_cat_file)
+
+    x_Ico = this_Ico_cat['dx']*deg_to_pc
+    y_Ico = this_Ico_cat['dy']*deg_to_pc
+
+    x_Ico = x_Ico[0:n_sim_to_use]
+    y_Ico = y_Ico[0:n_sim_to_use]
+
+    n_Ico = len(x_Ico)
+
     if verbose:
         print("")
         print("... galaxy: ", this_source)
@@ -127,7 +142,15 @@ for this_source in source_list:
                 bins_lo, bins_hi)
     else:
         twopt_exp_flat = twopt_real_flat*np.nan
-    
+
+    # ... real vs Ico weighted
+    print("... calculating real vs Ico")
+    twopt_real_Ico = \
+        calc_twopoint(
+            x_real, y_real,
+            x_Ico, y_Ico, 
+            bins_lo, bins_hi)
+
     # Loop over realizations of random catalogs
     monte_flat_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
     monte_exp_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
@@ -259,4 +282,12 @@ for this_source in source_list:
     tab_exp_vs_flat = Table(twopt_exp_vs_flat)
     tab_exp_vs_flat.write(tabfile_exp_vs_flat,format='fits',overwrite=True)
     
-    
+    twopt_real_vs_Ico = {
+        'xlo':bins_lo,
+        'xmid':bins_mid,
+        'xgeo':bins_geo,
+        'xhi':bins_hi,
+        'twopt':twopt_real_Ico,
+    }
+    tab_real_vs_Ico = Table(twopt_real_vs_Ico)
+    tab_real_vs_Ico.write(tabfile_real_vs_Ico,format='fits',overwrite=True)

@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../')
-sys.path.append('../aklpyutils/')
+sys.path.append('../utilsForTwopt/')
 
 from key_dirs import *
 from utils_spacing import *
@@ -28,7 +28,13 @@ for this_source in source_list:
     # Extract the array and coverage file
     this_array = array_dict[this_source]
     this_cov_file = fid_cov_dict[this_source]
-    
+    this_fid_broad_map = broad_map_dict[this_source]
+
+    # Read the kpc-scale moment 0 file
+    hdulist = fits.open(this_fid_broad_map)
+    kpc_mom0_map = hdulist[0].data
+    hdulist.close()
+
     # Read the file
     hdulist = fits.open(this_cov_file)
     cov_map = hdulist[0].data
@@ -55,15 +61,23 @@ for this_source in source_list:
     exp_model = (cov_map > 0.25)*(np.exp(-1.0*radius_map/this_lstar_deg))
     exp_model = exp_model/np.nansum(exp_model)
 
+    # change by Hao He (July 1st, 2024), add the model to sample the GMCs based on the kpc-scale CO emission
+    Ico_model = (cov_map > 0.25)*kpc_mom0_map 
+    Ico_model = Ico_model/np.nansum(Ico_model)
+
     # Write to disk
     flat_model_file = mod_map_dir+this_source+'_flat_model_150pc.fits'
     exp_model_file = mod_map_dir+this_source+'_exp_model_150pc.fits'
+    Ico_model_file = mod_map_dir+this_source+'_Ico_model_150pc.fits'
 
     flat_hdu = fits.PrimaryHDU(data=flat_model,header=hdr)
     flat_hdu.writeto(flat_model_file, overwrite=True)
 
     exp_hdu = fits.PrimaryHDU(data=exp_model,header=hdr)
     exp_hdu.writeto(exp_model_file, overwrite=True)
+
+    Ico_hdu = fits.PrimaryHDU(data=Ico_model, header=hdr)
+    Ico_hdu.writeto(Ico_model_file, overwrite=True)
 
     # Read the fiducial catalog
     this_cat = fid_cat_dict[this_source]
@@ -76,6 +90,9 @@ for this_source in source_list:
 
     this_sim_dir = sim_dir+'exp/'
     exp_cat_outfile = this_sim_dir+this_source+'_exp_150pc.fits'
+
+    this_sim_dir = sim_dir+'Ico/'
+    Ico_cat_outfile = this_sim_dir+this_source+'_Ico_150pc.fits'
 
     if verbose:
         print("Placing clouds:")
@@ -90,4 +107,7 @@ for this_source in source_list:
         place_nclouds_in_map(
             flat_model_file, n_clouds_to_place, flat_cat_outfile,
             this_ra, this_dec, this_pa, this_incl)
-        
+       
+        place_nclouds_in_map(
+            Ico_model_file, n_clouds_to_place, Ico_cat_outfile,
+            this_ra, this_dec, this_pa, this_incl)
