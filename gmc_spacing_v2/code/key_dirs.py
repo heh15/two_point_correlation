@@ -7,7 +7,7 @@ from astropy.table import Table
 root_dir = '../'
 # data_dir = root_dir+'data/'
 cat_root_dir =  root_dir+'cloud_cats_fits/'
-fid_cat_dir =  root_dir+'cloud_cats_2024/gmc_cats_150pc_46mK/'
+fid_cat_dir =  cat_root_dir+'homogen_hi_150pc_props/'
 # fid_cat_dir =  cat_root_dir+'homogen_hi_90pc_props/'
 
 # try to calculate the GMC auto-correlation function at 90 pc resolution (Feb. 27th, 2024)
@@ -32,7 +32,7 @@ temp_source_list = os.listdir(fid_cat_dir)
 temp_source_list.sort()
 source_list = []
 for this_source_file in temp_source_list:
-    this_source = this_source_file.split('_')[1]
+    this_source = this_source_file.split('_')[0]
     if this_source == 'ngc4945':
         continue
     if this_source == 'ngc0247':
@@ -118,14 +118,12 @@ missing_coverage = 0
     
 exp_mask_ext = '_150pc_exp_mask.fits'
 
-source_low_recfrac = []
-
 for this_source in source_list:
 
     sample_tab_row = int(np.where(sample_tab['name'] == this_source)[0])
     deets_dict[this_source] = sample_tab[sample_tab_row]
                 
-    fidcat_glob = glob.glob(fid_cat_dir+'PHANGS_'+this_source+'*_gmccat.fits')
+    fidcat_glob = glob.glob(fid_cat_dir+this_source+'*_props.fits')
     if len(fidcat_glob) != 1:
         print("Unexpected number of catalogs: ", fidcat_glob)
         print("... for ", this_source)
@@ -135,12 +133,7 @@ for this_source in source_list:
     nclouds = len(cloud_cat)
     fid_ncloud_list.append(nclouds)
     fid_ncloud_dict[this_source] = nclouds
-
-    # exclude the galaxies with low GMC flux recovery fraction
-    fid_flux_frac = np.nanmedian(cloud_cat['FRACF_CO21_OBJ'])
-    if fid_flux_frac < 0.7:
-        source_low_recfrac.append(this_source)
-
+        
     this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_1+'_co21_150pc_coverage2d.fits'
 #     this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_1+'_co21_90pc_coverage2d.fits'
     print(this_cov_file)
@@ -155,7 +148,7 @@ for this_source in source_list:
             fid_cov_dict[this_source] = this_cov_file
         else:
             this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_3+'_co21_150pc_coverage2d.fits'
-#             this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_3+'_co21_90pc_coverage2d.fits'
+            # this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_3+'_co21_90pc_coverage2d.fits'
             if os.path.isfile(this_cov_file):
                 array_dict[this_source] = array_string_3
                 fid_cov_dict[this_source] = this_cov_file
@@ -172,15 +165,15 @@ for this_source in source_list:
     else:
         print("Missing broad mom0 for ", this_source)
 
-    this_fid_mom0_map = this_derived_dir + this_source + '_' + array_dict[this_source] + '_co21_150pc_broad_mom0.fits'
-    # this_fid_mom0_map = this_derived_dir + this_source + '_' + array_dict[this_source] + '_co21_90pc_broad_mom0.fits'
+    this_fid_mom0_map = this_derived_dir + this_source + '_' + array_dict[this_source] + \
+       '_co21_150pc_broad_mom0.fits'
+#     this_fid_mom0_map = this_derived_dir + this_source + '_' + array_dict[this_source] + \
+#        '_co21_90pc_broad_mom0.fits'
     if os.path.isfile(this_fid_mom0_map):
         mom0_map_dict[this_source] = this_fid_mom0_map
     else:
         print("Missing fiducial mom0 for ", this_source)
-
-source_list = [source for source in source_list if source not in source_low_recfrac]
-
+        
 #print(fid_ncloud_list)
 ncloud_ra = np.array(fid_ncloud_list)
 max_nclouds = np.nanmax(ncloud_ra)
