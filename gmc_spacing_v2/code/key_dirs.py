@@ -7,17 +7,19 @@ from astropy.table import Table
 root_dir = '../'
 # data_dir = root_dir+'data/'
 cat_root_dir =  root_dir+'cloud_cats_fits/'
-fid_cat_dir =  cat_root_dir+'homogen_hi_150pc_props/'
+
+# set the fiducial cloud catalog
+reslt = '60pc'
+senstvt = 'hi'
+fid_cat_dir =  cat_root_dir+'homogen_'+senstvt+'_'+reslt+'_props/'
 # fid_cat_dir =  cat_root_dir+'homogen_hi_90pc_props/'
 
-# try to calculate the GMC auto-correlation function at 90 pc resolution (Feb. 27th, 2024)
-
 cov_map_dir = root_dir+'data/coverage_maps/'
-mod_map_dir = root_dir+'model_maps/'
+mod_map_dir = root_dir+'model_maps_'+reslt+'/'
 # mod_map_dir = root_dir+'model_maps_90pc/'
 mom0_map_dir = root_dir+'data/mom0/'
 sim_dir =  root_dir+'sim_results/'
-corr_dir = root_dir+'corr_results/'
+corr_dir = root_dir+'corr_60pc_hi_results/'
 # corr_dir = root_dir + 'corr_150pc_lo_results/'
 derived_root_dir = '/vol/alcina/data1/hhe/two_point_correlation/delivery_v4p0/'
 # Sample table
@@ -116,7 +118,7 @@ broad_map_dict = {}
 missing_cats = 0
 missing_coverage = 0
     
-exp_mask_ext = '_150pc_exp_mask.fits'
+exp_mask_ext = '_'+reslt+'_exp_mask.fits'
 
 for this_source in source_list:
 
@@ -134,21 +136,18 @@ for this_source in source_list:
     fid_ncloud_list.append(nclouds)
     fid_ncloud_dict[this_source] = nclouds
         
-    this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_1+'_co21_150pc_coverage2d.fits'
-#     this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_1+'_co21_90pc_coverage2d.fits'
+    this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_1+'_co21_'+reslt+'_coverage2d.fits'
     print(this_cov_file)
     if os.path.isfile(this_cov_file):
         array_dict[this_source] = array_string_1
         fid_cov_dict[this_source] = this_cov_file
     else:
-        this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_2+'_co21_150pc_coverage2d.fits'
-#         this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_2+'_co21_90pc_coverage2d.fits'
+        this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_2+'_co21_'+reslt+'_coverage2d.fits'
         if os.path.isfile(this_cov_file):
             array_dict[this_source] = array_string_2
             fid_cov_dict[this_source] = this_cov_file
         else:
-            this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_3+'_co21_150pc_coverage2d.fits'
-            # this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_3+'_co21_90pc_coverage2d.fits'
+            this_cov_file = derived_root_dir+this_source+'/'+this_source+'_'+array_string_3+'_co21_'+reslt+'_coverage2d.fits'
             if os.path.isfile(this_cov_file):
                 array_dict[this_source] = array_string_3
                 fid_cov_dict[this_source] = this_cov_file
@@ -166,9 +165,7 @@ for this_source in source_list:
         print("Missing broad mom0 for ", this_source)
 
     this_fid_mom0_map = this_derived_dir + this_source + '_' + array_dict[this_source] + \
-       '_co21_150pc_broad_mom0.fits'
-#     this_fid_mom0_map = this_derived_dir + this_source + '_' + array_dict[this_source] + \
-#        '_co21_90pc_broad_mom0.fits'
+       '_co21_'+reslt+'_broad_mom0.fits'
     if os.path.isfile(this_fid_mom0_map):
         mom0_map_dict[this_source] = this_fid_mom0_map
     else:

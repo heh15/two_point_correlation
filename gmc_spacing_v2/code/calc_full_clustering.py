@@ -36,12 +36,13 @@ do_monte = False
 for this_source in source_list:
     
     # Define output filenames
-    tabfile_real_vs_flat = corr_dir + this_source + '_150pc_realvsflat.fits'
-    tabfile_real_vs_exp = corr_dir + this_source + '_150pc_realvsexp.fits'
-    tabfile_exp_vs_flat = corr_dir + this_source + '_150pc_expvsflat.fits'
-    tabfile_real_vs_Ico = corr_dir + this_source + '_150pc_realvsIco.fits'
-    tabfile_Ico_vs_exp = corr_dir + this_source + '_150pc_Icovsexp.fits'
-    
+    tabfile_real_vs_flat = corr_dir + this_source + '_'+reslt+'_realvsflat.fits'
+    tabfile_real_vs_exp = corr_dir + this_source + '_'+reslt+'_realvsexp.fits'
+    tabfile_exp_vs_flat = corr_dir + this_source + '_'+reslt+'_expvsflat.fits'
+    tabfile_real_vs_rad = corr_dir + this_source + '_'+reslt+'_realvsrad.fits'
+    tabfile_real_vs_Ico = corr_dir + this_source + '_'+reslt+'_realvsIco.fits'
+    tabfile_Ico_vs_exp = corr_dir + this_source + '_'+reslt+'_Icovsexp.fits'
+
     # Extract source information
     this_row = deets_dict[this_source] 
     this_ra = this_row['orient_ra']
@@ -69,7 +70,7 @@ for this_source in source_list:
 
     # ... exponential catalog
     exp_sim_dir = sim_dir + 'exp/'
-    this_exp_cat_file = exp_sim_dir+this_source+'_exp_150pc.fits'
+    this_exp_cat_file = exp_sim_dir+this_source+'_exp_'+reslt+'.fits'
     this_exp_cat = Table.read(this_exp_cat_file)
 
     x_exp = this_exp_cat['dx']*deg_to_pc
@@ -82,7 +83,7 @@ for this_source in source_list:
     
     # ... flat catalog
     flat_sim_dir = sim_dir + 'flat/'
-    this_flat_cat_file = flat_sim_dir+this_source+'_flat_150pc.fits'
+    this_flat_cat_file = flat_sim_dir+this_source+'_flat_'+reslt+'.fits'
     this_flat_cat = Table.read(this_flat_cat_file)
 
     x_flat = this_flat_cat['dx']*deg_to_pc
@@ -93,9 +94,22 @@ for this_source in source_list:
 
     n_flat = len(x_flat)
 
+    # ... radial catalog
+    rad_sim_dir = sim_dir + 'rad/'
+    this_rad_cat_file = rad_sim_dir+this_source+'_rad_'+reslt+'.fits'
+    this_rad_cat = Table.read(this_rad_cat_file)
+
+    x_rad = this_rad_cat['dx']*deg_to_pc
+    y_rad = this_rad_cat['dy']*deg_to_pc
+
+    x_rad = x_rad[0:n_sim_to_use]
+    y_rad = y_rad[0:n_sim_to_use]
+
+    n_rad = len(x_rad)
+    
     # ... Ico catalog
     Ico_sim_dir = sim_dir + 'Ico/'
-    this_Ico_cat_file = Ico_sim_dir+this_source+'_Ico_150pc.fits'
+    this_Ico_cat_file = Ico_sim_dir+this_source+'_Ico_'+reslt+'.fits'
     this_Ico_cat = Table.read(this_Ico_cat_file)
 
     x_Ico = this_Ico_cat['dx']*deg_to_pc
@@ -142,6 +156,14 @@ for this_source in source_list:
                 bins_lo, bins_hi)
     else:
         twopt_exp_flat = twopt_real_flat*np.nan
+
+    # ... real vs radial
+    print('... calculating real vs rad')
+    twopt_real_rad = \
+        calc_twopoint(
+            x_real, y_real,
+            x_rad, y_rad,
+            bins_lo, bins_hi)
 
     # ... real vs Ico weighted
     print("... calculating real vs Ico")
@@ -282,6 +304,16 @@ for this_source in source_list:
     tab_exp_vs_flat = Table(twopt_exp_vs_flat)
     tab_exp_vs_flat.write(tabfile_exp_vs_flat,format='fits',overwrite=True)
     
+    twopt_real_vs_rad = {
+        'xlo':bins_lo,
+        'xmid':bins_mid,
+        'xgeo':bins_geo,
+        'xhi':bins_hi,
+        'twopt':twopt_real_rad,
+    }
+    tab_real_vs_rad = Table(twopt_real_vs_rad)
+    tab_real_vs_rad.write(tabfile_real_vs_rad,format='fits',overwrite=True)
+
     twopt_real_vs_Ico = {
         'xlo':bins_lo,
         'xmid':bins_mid,

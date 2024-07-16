@@ -13,7 +13,19 @@ bins_hi = bins_lo+25.
 bins_mid = (bins_lo+bins_hi)*0.5
 nbins = len(bins_lo)
 
-outfile_dir = '../cross_results/'
+# log_xmin = 1.0
+# log_xbin = 0.1
+# log_xlo = log_xmin + np.arange(31)*log_xbin
+# log_xhi = log_xlo + log_xbin
+# 
+# bins_lo = 10.**(log_xlo)
+# bins_hi = 10.**(log_xhi)
+# bins_mid = (bins_lo+bins_hi)*0.5
+# bins_geo = np.sqrt(bins_lo*bins_hi)
+# bins_mid = bins_geo
+# nbins = len(bins_lo)
+
+outfile_dir = '../cross_60pc_hi_results/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise
@@ -51,7 +63,7 @@ for this_source in source_list:
     # Note the moment0 file and the model file
     
     this_mom0_file = mom0_map_dict[this_source]
-    model_file = mod_map_dir+this_source+'_source_model_150pc.fits'
+    model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
 #     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'    
 
     # Read the file
@@ -99,7 +111,7 @@ for this_source in source_list:
     
     all_real_crosses, all_real_counts = \
         calc_many_peak_image_crosses(
-            peak_val*0.0+1.0, peak_deltax, peak_deltay,
+            peak_val*0+1, peak_deltax, peak_deltay,
             mom0_map, map_deltax, map_deltay,
             bins_lo, bins_hi)
 
@@ -118,7 +130,7 @@ for this_source in source_list:
     
     all_model_crosses, all_model_counts = \
         calc_many_peak_image_crosses(
-            peak_val*0.0+1.0, peak_deltax, peak_deltay,
+            peak_val*0+1, peak_deltax, peak_deltay,
             model_map, map_deltax, map_deltay,
             bins_lo, bins_hi)
     # print(all_model_crosses)

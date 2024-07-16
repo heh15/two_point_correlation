@@ -427,7 +427,7 @@ def calc_twopoint(
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 def make_mock_image(
-        flux_val, peak_ra, peak_dec, peak_fwhm, ra_map, dec_map,        
+        flux_val, peak_ra, peak_dec, beam_fwhm, ra_map, dec_map, gal_dist, peak_fwhm=None, 
         mask_to_blank=None, verbose=True):
     """Take a list of peak values and positions and sizes and a coordinate
     grid and fill in the grid with two dimensional Gaussians. Useful
@@ -439,6 +439,8 @@ def make_mock_image(
 
     # Check if the size varies by source
     fixed_fwhm = False
+    if peak_fwhm is None:
+        peak_fwhm = beam_fwhm
     if (type(peak_fwhm) == type(1.0)) or \
        (type(peak_fwhm) == type(1)):
         fixed_fwhm = True
@@ -464,7 +466,11 @@ def make_mock_image(
         
         this_source = np.exp(-1./2.*this_dist**2/this_width_sig**2)
         # rescale the source to have the same flux as the data
-        peak_value = flux_val[ii] / (2*math.pi*(150/2.354)**2)
+        if fixed_fwhm:
+            peak_fwhm_pc = peak_fwhm * 3600 * 4.85 * gal_dist 
+        else: 
+            peak_fwhm_pc = peak_fwhm[ii] * 3600 * 4.85 * gal_dist
+        peak_value = flux_val[ii] / (2*math.pi*(peak_fwhm_pc/2.354)**2)
         this_source = peak_value * this_source
 
         map += this_source

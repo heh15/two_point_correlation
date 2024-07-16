@@ -60,21 +60,23 @@ for this_source in source_list:
     x_map, y_map  = wcs.wcs_world2pix(peak_ra,peak_dec,0)
 #    peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]   
     # Make the model map
-    peak_fwhm = hdr['BMAJ']
+    beam_fwhm = hdr['BMAJ']
+    peak_fwhm_pc = np.array(2.354*np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
+    peak_fwhm = peak_fwhm_pc / 4.85 / this_dist / 3600
     mock_map = make_mock_image(
-        flux_val, peak_ra, peak_dec, peak_fwhm,
-        ra_map, dec_map, mask_to_blank=(np.isfinite(mom0_map)==False))
+        flux_val, peak_ra, peak_dec, beam_fwhm,
+        ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
 
     # Scale up the model map to conserve the flux
     scale_factor = np.nansum(mom0_map) / np.nansum(mock_map)
     print(scale_factor)
     scale_factors.append(scale_factor)
 
-#     # Write to disk
-#     model_file = mod_map_dir+this_source+'_source_model_150pc.fits'
-# #     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
-#     model_hdu = fits.PrimaryHDU(data=mock_map,header=hdr)
-#     model_hdu.writeto(model_file, overwrite=True)
+    # Write to disk
+    model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
+#     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
+    model_hdu = fits.PrimaryHDU(data=mock_map,header=hdr)
+    model_hdu.writeto(model_file, overwrite=True)
 
 galaxy_fluxes = {}
 galaxy_fluxes['Name'] = source_list
