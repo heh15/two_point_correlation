@@ -25,7 +25,7 @@ nbins = len(bins_lo)
 # bins_mid = bins_geo
 # nbins = len(bins_lo)
 
-outfile_dir = '../cross_60pc_hi_results/'
+outfile_dir = '../cross_results/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise
@@ -118,12 +118,17 @@ for this_source in source_list:
     #print(all_real_crosses.shape)
     
     outfile_name = outfile_dir + this_source + '_realcross.fits'
+    nan_mask = (np.isnan(all_real_crosses)) | (np.isnan(all_real_counts))
+    avrg_intst_maskd = np.ma.masked_array(all_real_crosses / all_real_counts,
+                                        nan_mask)
 
     real_tab = Table()
     real_tab['bins_xlo'] = bins_lo
     real_tab['bins_xmid'] = bins_mid
     real_tab['bins_xhi'] = bins_hi
-    real_tab['ymean']  = np.nanmean(all_real_crosses/all_real_counts, axis=0)
+    real_tab['ymean']  = np.ma.average(avrg_intst_maskd, axis=0)
+    real_tab['ymean_weightd'] = np.ma.average(avrg_intst_maskd, 
+                                            weights= peak_val, axis=0)
     real_tab['ymedian']  = np.nanmedian(all_real_crosses/all_real_counts, axis=0)    
     
     real_tab.write(outfile_name, format='fits', overwrite=True)
@@ -134,14 +139,19 @@ for this_source in source_list:
             model_map, map_deltax, map_deltay,
             bins_lo, bins_hi)
     # print(all_model_crosses)
-    
+
     outfile_name = outfile_dir + this_source + '_modelcross.fits'
+    nan_mask = (np.isnan(all_model_crosses)) | (np.isnan(all_model_counts))
+    avrg_intst_maskd = np.ma.masked_array(all_model_crosses / all_model_counts,
+                                        nan_mask)
 
     model_tab = Table()
     model_tab['bins_xlo'] = bins_lo
     model_tab['bins_xmid'] = bins_mid
     model_tab['bins_xhi'] = bins_hi
     model_tab['ymean']  = np.nanmean(all_model_crosses/all_model_counts, axis=0)
+    model_tab['ymean_weightd'] = np.ma.average(avrg_intst_maskd,
+                                            weights= peak_val, axis=0)
     model_tab['ymedian']  = np.nanmedian(all_model_crosses/all_model_counts, axis=0)    
 
     model_tab.write(outfile_name, format='fits', overwrite=True)    
