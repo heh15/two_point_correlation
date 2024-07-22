@@ -67,6 +67,12 @@ for this_source in source_list:
         flux_val, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
 
+    # make the model map with fixed beam
+    mock_map_beam = make_mock_image(
+        flux_val, peak_ra, peak_dec, beam_fwhm,
+        ra_map, dec_map, this_dist, peak_fwhm=beam_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
+
+
     # Scale up the model map to conserve the flux
     scale_factor = np.nansum(mom0_map) / np.nansum(mock_map)
     print(scale_factor)
@@ -76,6 +82,12 @@ for this_source in source_list:
     model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
 #     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
     model_hdu = fits.PrimaryHDU(data=mock_map,header=hdr)
+    model_hdu.writeto(model_file, overwrite=True)
+
+    # write the model image with fixed beam size
+    model_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
+#     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
+    model_hdu = fits.PrimaryHDU(data=mock_map_beam,header=hdr)
     model_hdu.writeto(model_file, overwrite=True)
 
 galaxy_fluxes = {}

@@ -64,6 +64,7 @@ for this_source in source_list:
     
     this_mom0_file = mom0_map_dict[this_source]
     model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
+    modelbeam_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
 #     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'    
 
     # Read the file
@@ -73,6 +74,9 @@ for this_source in source_list:
 
     model_hdulist = fits.open(model_file)
     model_map = model_hdulist[0].data
+
+    modelbeam_hdulist = fits.open(modelbeam_file)
+    modelbeam_map = modelbeam_hdulist[0].data
 
     # Make coordinates
     
@@ -155,7 +159,39 @@ for this_source in source_list:
     model_tab['ymedian']  = np.nanmedian(all_model_crosses/all_model_counts, axis=0)    
 
     model_tab.write(outfile_name, format='fits', overwrite=True)    
-    
+
+    all_modelbeam_crosses, all_modelbeam_counts = \
+        calc_many_peak_image_crosses(
+            peak_val*0+1, peak_deltax, peak_deltay,
+            modelbeam_map, map_deltax, map_deltay,
+            bins_lo, bins_hi)
+    # print(all_model_crosses)
+
+    outfile_name = outfile_dir + this_source + '_modelbeam.fits'
+    nan_mask = (np.isnan(all_modelbeam_crosses)) | (np.isnan(all_modelbeam_counts))
+    avrg_intst_maskd = np.ma.masked_array(all_modelbeam_crosses / all_modelbeam_counts, nan_mask)
+
+    modelbeam_tab = Table()
+    modelbeam_tab['bins_xlo'] = bins_lo
+    modelbeam_tab['bins_xmid'] = bins_mid
+    modelbeam_tab['bins_xhi'] = bins_hi
+    modelbeam_tab['ymean']  = np.nanmean(all_modelbeam_crosses/all_modelbeam_counts, axis=0)
+    modelbeam_tab['ymean_weightd'] = np.ma.average(avrg_intst_maskd,
+                                            weights= peak_val, axis=0)
+    modelbeam_tab['ymedian']  = np.nanmedian(all_modelbeam_crosses/all_modelbeam_counts, axis=0)
+    modelbeam_tab.write(outfile_name, format='fits', overwrite=True) 
+
+    # write the radial profile of individual clouds into a Table
+    this_cat_rad = Table()
+    this_cat_rad['peak_val'] = peak_val
+    this_cat_rad['radial_bins'] = np.tile(bins_mid, (len(this_cat),1))
+    this_cat_rad['radial_real_val'] = all_real_crosses / all_real_counts
+    this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
+    this_cat_rad['radial_modelbeam_val'] = all_modelbeam_crosses / all_modelbeam_counts
+    # save it to a new table
+    outfile_name = '../cloud_radial_profile/'+this_source+'_'+reslt+'_'+senstvt+'_cat.fits'
+    this_cat_rad.write(outfile_name, format='fits', overwrite=True)
+
     # Now run the 
     #model_file = mod_map_dir+this_source+'_source_model_150pc.fits'
     #model_hdu = fits.open(data=mock_map,header=mock_hdr)
