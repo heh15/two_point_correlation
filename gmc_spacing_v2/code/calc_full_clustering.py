@@ -6,7 +6,7 @@ from key_dirs import *
 from utils_spacing import *
 from astropy.utils.console import ProgressBar
 
-
+corr_dir = '../corr_lo_150pc_results/'
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -36,12 +36,12 @@ do_monte = False
 for this_source in source_list:
     
     # Define output filenames
-    tabfile_real_vs_flat = corr_dir + this_source + '_'+reslt+'_realvsflat.fits'
-    tabfile_real_vs_exp = corr_dir + this_source + '_'+reslt+'_realvsexp.fits'
-    tabfile_exp_vs_flat = corr_dir + this_source + '_'+reslt+'_expvsflat.fits'
-    tabfile_real_vs_rad = corr_dir + this_source + '_'+reslt+'_realvsrad.fits'
-    tabfile_real_vs_Ico = corr_dir + this_source + '_'+reslt+'_realvsIco.fits'
-    tabfile_Ico_vs_exp = corr_dir + this_source + '_'+reslt+'_Icovsexp.fits'
+    tabfile_real_vs_flat = corr_dir + this_source + '_realvsflat.fits'
+    tabfile_real_vs_exp = corr_dir + this_source + '_realvsexp.fits'
+    tabfile_exp_vs_flat = corr_dir + this_source + '_expvsflat.fits'
+    tabfile_real_vs_rad = corr_dir + this_source + '_realvsrad.fits'
+    tabfile_real_vs_Ico = corr_dir + this_source + '_realvsIco.fits'
+    tabfile_Ico_vs_exp = corr_dir + this_source + '_Icovsexp.fits'
 
     # Extract source information
     this_row = deets_dict[this_source] 
@@ -70,7 +70,7 @@ for this_source in source_list:
 
     # ... exponential catalog
     exp_sim_dir = sim_dir + 'exp/'
-    this_exp_cat_file = exp_sim_dir+this_source+'_exp_'+reslt+'.fits'
+    this_exp_cat_file = exp_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_exp.fits'
     this_exp_cat = Table.read(this_exp_cat_file)
 
     x_exp = this_exp_cat['dx']*deg_to_pc
@@ -83,7 +83,7 @@ for this_source in source_list:
     
     # ... flat catalog
     flat_sim_dir = sim_dir + 'flat/'
-    this_flat_cat_file = flat_sim_dir+this_source+'_flat_'+reslt+'.fits'
+    this_flat_cat_file = flat_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_flat.fits'
     this_flat_cat = Table.read(this_flat_cat_file)
 
     x_flat = this_flat_cat['dx']*deg_to_pc
@@ -96,7 +96,7 @@ for this_source in source_list:
 
     # ... radial catalog
     rad_sim_dir = sim_dir + 'rad/'
-    this_rad_cat_file = rad_sim_dir+this_source+'_rad_'+reslt+'.fits'
+    this_rad_cat_file = rad_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_rad.fits'
     this_rad_cat = Table.read(this_rad_cat_file)
 
     x_rad = this_rad_cat['dx']*deg_to_pc
@@ -109,7 +109,7 @@ for this_source in source_list:
     
     # ... Ico catalog
     Ico_sim_dir = sim_dir + 'Ico/'
-    this_Ico_cat_file = Ico_sim_dir+this_source+'_Ico_'+reslt+'.fits'
+    this_Ico_cat_file = Ico_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_Ico.fits'
     this_Ico_cat = Table.read(this_Ico_cat_file)
 
     x_Ico = this_Ico_cat['dx']*deg_to_pc

@@ -36,7 +36,7 @@ for this_source in source_list:
     # Read the radial profile
     radial_profile_table = Table.read('../radial_profile/'
             +this_source.upper()+'_base_annulus_0p5kpc.ecsv')
-    CO_radial = radial_profile_table['I_CO21'] / radial_profile_table['I_CO21'][0]
+    CO_radial = radial_profile_table['I_CO21'] # / radial_profile_table['I_CO21'][0]
     radial_dist_pc = radial_profile_table['r_gal']*1000
     radial_profile_func = interp1d(radial_dist_pc, CO_radial, fill_value='extrapolate')
     
@@ -81,10 +81,10 @@ for this_source in source_list:
     Ico_model = Ico_model/np.nansum(Ico_model)
 
     # Write to disk
-    flat_model_file = mod_map_dir+this_source+'_flat_model_'+reslt+'.fits'
-    exp_model_file = mod_map_dir+this_source+'_exp_model_'+reslt+'.fits'
-    rad_model_file = mod_map_dir+this_source+'_rad_model_'+reslt+'.fits'
-    Ico_model_file = mod_map_dir+this_source+'_Ico_model_'+reslt+'.fits'
+    flat_model_file = weight_map_dir+this_source+'_flat_model.fits'
+    exp_model_file = weight_map_dir+this_source+'_exp_model.fits'
+    rad_model_file = weight_map_dir+this_source+'_rad_model.fits'
+    Ico_model_file = weight_map_dir+this_source+'_Ico_model.fits'
 
     flat_hdu = fits.PrimaryHDU(data=flat_model,header=hdr)
     flat_hdu.writeto(flat_model_file, overwrite=True)
@@ -105,16 +105,16 @@ for this_source in source_list:
     n_clouds_to_place = this_nclouds*niters
 
     this_sim_dir = sim_dir+'flat/'
-    flat_cat_outfile = this_sim_dir+this_source+'_flat_'+reslt+'.fits'
+    flat_cat_outfile = this_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_flat.fits'
 
     this_sim_dir = sim_dir+'exp/'
-    exp_cat_outfile = this_sim_dir+this_source+'_exp_'+reslt+'.fits'
+    exp_cat_outfile = this_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_exp.fits'
 
     this_sim_dir = sim_dir+'rad/'
-    rad_cat_outfile = this_sim_dir+this_source+'_rad_'+reslt+'.fits'
+    rad_cat_outfile = this_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_rad.fits'
 
     this_sim_dir = sim_dir+'Ico/'
-    Ico_cat_outfile = this_sim_dir+this_source+'_Ico_'+reslt+'.fits'
+    Ico_cat_outfile = this_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_Ico.fits'
 
     if verbose:
         print("Placing clouds:")
@@ -129,11 +129,12 @@ for this_source in source_list:
         place_nclouds_in_map(
             flat_model_file, n_clouds_to_place, flat_cat_outfile,
             this_ra, this_dec, this_pa, this_incl)
-      
-        place_nclouds_in_map(
-            rad_model_file, n_clouds_to_place, rad_cat_outfile,
-            this_ra, this_dec, this_pa, this_incl)
-
+        try:      
+            place_nclouds_in_map(
+                rad_model_file, n_clouds_to_place, rad_cat_outfile,
+                this_ra, this_dec, this_pa, this_incl)
+        except:
+            print(this_source)
         place_nclouds_in_map(
             Ico_model_file, n_clouds_to_place, Ico_cat_outfile,
             this_ra, this_dec, this_pa, this_incl)

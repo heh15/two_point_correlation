@@ -9,17 +9,18 @@ root_dir = '../'
 cat_root_dir =  root_dir+'cloud_cats_fits/'
 
 # set the fiducial cloud catalog
-reslt = '60pc'
-senstvt = 'hi'
+reslt = '150pc'
+senstvt = 'lo'
 fid_cat_dir =  cat_root_dir+'homogen_'+senstvt+'_'+reslt+'_props/'
 # fid_cat_dir =  cat_root_dir+'homogen_hi_90pc_props/'
 
 cov_map_dir = root_dir+'data/coverage_maps/'
-mod_map_dir = root_dir+'model_maps_'+reslt+'/'
-# mod_map_dir = root_dir+'model_maps_90pc/'
+weight_map_dir = root_dir+'weight_maps/'
+mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
+# mod_map_dir = root_dir+'model_maps/'
 mom0_map_dir = root_dir+'data/mom0/'
 sim_dir =  root_dir+'sim_results/'
-corr_dir = root_dir+'corr_60pc_hi_results/'
+# corr_dir = root_dir+'corr_results/'
 # corr_dir = root_dir + 'corr_150pc_lo_results/'
 derived_root_dir = '/vol/alcina/data1/hhe/two_point_correlation/delivery_v4p0/'
 # Sample table
@@ -45,6 +46,9 @@ for this_source_file in temp_source_list:
 
 source_list = [*set(source_list)]
 source_list.sort()
+# remove sources without radial profile (ngc2775 probably has a hole in the center)
+source_list = [source for source in source_list if source not in ['ngc2775','ngc4207', 'ngc4424','ngc4694']]
+
 n_sources = len(source_list)    
 print(source_list)
 
