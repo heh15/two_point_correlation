@@ -34,6 +34,7 @@ outfile_dir = '../cross_results/'
 # Place gaussians at each catalog peak
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+
 for this_source in source_list:
 
     print("")
@@ -181,6 +182,15 @@ for this_source in source_list:
     modelbeam_tab['ymedian']  = np.nanmedian(all_modelbeam_crosses/all_modelbeam_counts, axis=0)
     modelbeam_tab.write(outfile_name, format='fits', overwrite=True) 
 
+    # calculate the radial profile of individual clouds without including contribution from other GMCs
+    flux_val = np.array(this_cat['FLUX_KKMS_PC2'])
+    this_width_sig = np.array(np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
+    peak_values = flux_val / (2*math.pi*this_width_sig**2)
+    gaussian_rad = []
+    for i, peak in enumerate(peak_values):
+        gaussian_rad.append(peak * np.exp(-1./2.*bins_mid**2/this_width_sig[i]**2))
+    gaussian_rad = np.array(gaussian_rad)
+
     # write the radial profile of individual clouds into a Table
     this_cat_rad = Table()
     this_cat_rad['peak_val'] = peak_val
@@ -188,6 +198,7 @@ for this_source in source_list:
     this_cat_rad['radial_real_val'] = all_real_crosses / all_real_counts
     this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
     this_cat_rad['radial_modelbeam_val'] = all_modelbeam_crosses / all_modelbeam_counts
+    this_cat_rad['radial_singlgmc_val'] = gaussian_rad
     # save it to a new table
     outfile_name = '../cloud_radial_profile/'+this_source+'_'+reslt+'_'+senstvt+'_cat.fits'
     this_cat_rad.write(outfile_name, format='fits', overwrite=True)

@@ -58,7 +58,7 @@ for this_source in source_list:
 
     # Peak positions
     x_map, y_map  = wcs.wcs_world2pix(peak_ra,peak_dec,0)
-#    peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]   
+    peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]   
     # Make the model map
     beam_fwhm = hdr['BMAJ']
     peak_fwhm_pc = np.array(2.354*np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
