@@ -34,7 +34,6 @@ outfile_dir = '../cross_results/'
 # Place gaussians at each catalog peak
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-
 for this_source in source_list:
 
     print("")
@@ -126,16 +125,19 @@ for this_source in source_list:
     nan_mask = (np.isnan(all_real_crosses)) | (np.isnan(all_real_counts))
     avrg_intst_maskd = np.ma.masked_array(all_real_crosses / all_real_counts,
                                         nan_mask)
-
+    y_norm = avrg_intst_maskd / (avrg_intst_maskd[:,0])[:,np.newaxis]
+    
     real_tab = Table()
     real_tab['bins_xlo'] = bins_lo
     real_tab['bins_xmid'] = bins_mid
     real_tab['bins_xhi'] = bins_hi
-    real_tab['ymean']  = np.ma.average(avrg_intst_maskd, axis=0)
-    real_tab['ymean_weightd'] = np.ma.average(avrg_intst_maskd, 
+    real_tab['I_mean']  = np.ma.average(avrg_intst_maskd, axis=0)
+    real_tab['I_mean_weightd'] = np.ma.average(avrg_intst_maskd, 
                                             weights= peak_val, axis=0)
-    real_tab['ymedian']  = np.nanmedian(all_real_crosses/all_real_counts, axis=0)    
-    
+    real_tab['I_median']  = np.nanmedian(all_real_crosses/all_real_counts, axis=0)    
+    real_tab['y_mean'] = np.nanmean(y_norm, axis=0) 
+    real_tab['y_median'] = np.nanmedian(y_norm, axis=0)
+    real_tab['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
     real_tab.write(outfile_name, format='fits', overwrite=True)
     
     all_model_crosses, all_model_counts = \
@@ -149,16 +151,19 @@ for this_source in source_list:
     nan_mask = (np.isnan(all_model_crosses)) | (np.isnan(all_model_counts))
     avrg_intst_maskd = np.ma.masked_array(all_model_crosses / all_model_counts,
                                         nan_mask)
+    y_norm = avrg_intst_maskd / (avrg_intst_maskd[:,0])[:,np.newaxis]
 
     model_tab = Table()
     model_tab['bins_xlo'] = bins_lo
     model_tab['bins_xmid'] = bins_mid
     model_tab['bins_xhi'] = bins_hi
-    model_tab['ymean']  = np.nanmean(all_model_crosses/all_model_counts, axis=0)
-    model_tab['ymean_weightd'] = np.ma.average(avrg_intst_maskd,
+    model_tab['I_mean']  = np.nanmean(all_model_crosses/all_model_counts, axis=0)
+    model_tab['I_mean_weightd'] = np.ma.average(avrg_intst_maskd,
                                             weights= peak_val, axis=0)
-    model_tab['ymedian']  = np.nanmedian(all_model_crosses/all_model_counts, axis=0)    
-
+    model_tab['I_median']  = np.nanmedian(all_model_crosses/all_model_counts, axis=0)    
+    model_tab['y_mean'] = np.nanmean(y_norm, axis=0)
+    model_tab['y_median'] = np.nanmedian(y_norm, axis=0)
+    model_tab['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
     model_tab.write(outfile_name, format='fits', overwrite=True)    
 
     all_modelbeam_crosses, all_modelbeam_counts = \
@@ -171,15 +176,19 @@ for this_source in source_list:
     outfile_name = outfile_dir + this_source + '_modelbeam.fits'
     nan_mask = (np.isnan(all_modelbeam_crosses)) | (np.isnan(all_modelbeam_counts))
     avrg_intst_maskd = np.ma.masked_array(all_modelbeam_crosses / all_modelbeam_counts, nan_mask)
+    y_norm = avrg_intst_maskd / (avrg_intst_maskd[:,0])[:,np.newaxis]
 
     modelbeam_tab = Table()
     modelbeam_tab['bins_xlo'] = bins_lo
     modelbeam_tab['bins_xmid'] = bins_mid
     modelbeam_tab['bins_xhi'] = bins_hi
-    modelbeam_tab['ymean']  = np.nanmean(all_modelbeam_crosses/all_modelbeam_counts, axis=0)
-    modelbeam_tab['ymean_weightd'] = np.ma.average(avrg_intst_maskd,
+    modelbeam_tab['I_mean']  = np.nanmean(all_modelbeam_crosses/all_modelbeam_counts, axis=0)
+    modelbeam_tab['I_mean_weightd'] = np.ma.average(avrg_intst_maskd,
                                             weights= peak_val, axis=0)
-    modelbeam_tab['ymedian']  = np.nanmedian(all_modelbeam_crosses/all_modelbeam_counts, axis=0)
+    modelbeam_tab['I_median']  = np.nanmedian(all_modelbeam_crosses/all_modelbeam_counts, axis=0)
+    modelbeam_tab['y_mean'] = np.nanmean(y_norm, axis=0)
+    modelbeam_tab['y_median'] = np.nanmedian(y_norm, axis=0)
+    modelbeam_tab['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
     modelbeam_tab.write(outfile_name, format='fits', overwrite=True) 
 
     # calculate the radial profile of individual clouds without including contribution from other GMCs
