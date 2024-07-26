@@ -66,6 +66,9 @@ for this_source in source_list:
     model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
     modelbeam_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
 #     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'    
+    
+    # note the kpc resolution map
+    this_1kpc_mom0_file = broad_map_dict[this_source]
 
     # Read the file
     
@@ -78,6 +81,8 @@ for this_source in source_list:
     modelbeam_hdulist = fits.open(modelbeam_file)
     modelbeam_map = modelbeam_hdulist[0].data
 
+    this_1kpc_map_hdulist = fits.open(this_1kpc_mom0_file)
+    this_1kpc_map = this_1kpc_map_hdulist[0].data
     # Make coordinates
     
     hdr = hdulist[0].header
@@ -90,7 +95,7 @@ for this_source in source_list:
     
     x_map, y_map  = wcs.wcs_world2pix(peak_ra,peak_dec,0)
     peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-
+    peak_1kpc_val = this_1kpc_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
     # Deproject the map
     
     center_coords = [this_ra, this_dec]
@@ -202,7 +207,12 @@ for this_source in source_list:
 
     # write the radial profile of individual clouds into a Table
     this_cat_rad = Table()
+    this_cat_rad['name'] = this_cat['GALAXY']
+    this_cat_rad['arm_lab'] = this_cat['ENV_ARM']
+    this_cat_rad['ring_lab'] = this_cat['ENV_RING']
+    this_cat_rad['bar_lab'] = this_cat['ENV_BAR']
     this_cat_rad['peak_val'] = peak_val
+    this_cat_rad['peak_1kpc_val'] = peak_1kpc_val
     this_cat_rad['radial_bins'] = np.tile(bins_mid, (len(this_cat),1))
     this_cat_rad['radial_real_val'] = all_real_crosses / all_real_counts
     this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
