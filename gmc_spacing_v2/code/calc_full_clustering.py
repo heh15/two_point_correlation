@@ -6,7 +6,7 @@ from key_dirs import *
 from utils_spacing import *
 from astropy.utils.console import ProgressBar
 
-corr_dir = '../corr_lo_150pc_results/'
+corr_dir = '../corr_hi_150pc_arm_results/'
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -28,6 +28,8 @@ exp_vs_flat_fac = 10
 
 do_exp_vs_flat = False
 do_monte = False
+
+do_envrm_corr = True
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Loop over sources
@@ -57,6 +59,8 @@ for this_source in source_list:
     
     # Read fiducial catalog
     this_real_cat = Table.read(fid_cat_dict[this_source].replace('_props.fits','_props_valueadded.fits'))
+    if do_envrm_corr == True:
+        this_real_cat = this_real_cat[this_real_cat['ENV_ARM']==1] 
     if len(this_real_cat) < thresh_cloud_count:
         continue
     x_real = this_real_cat['DELTAX_DEG']*deg_to_pc

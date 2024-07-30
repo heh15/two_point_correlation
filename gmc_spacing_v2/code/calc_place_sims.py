@@ -7,15 +7,21 @@ from scipy.interpolate import interp1d
 from key_dirs import *
 from utils_spacing import *
 
+from reproject import reproject_interp
+
 dry_run = False
 
 niters = 1e4
 verbose = True
 
+do_envrm_mask = True
+
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Run random placements
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+# temporarily remove ngc0253 since it does not have environmental mask
+source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']] 
 
 for this_source in source_list:
 
@@ -32,7 +38,8 @@ for this_source in source_list:
     this_array = array_dict[this_source]
     this_cov_file = fid_cov_dict[this_source]
     this_fid_broad_map = broad_map_dict[this_source]
-    
+
+
     # Read the radial profile
     radial_profile_table = Table.read('../radial_profile/'
             +this_source.upper()+'_base_annulus_0p5kpc.ecsv')
@@ -64,20 +71,30 @@ for this_source in source_list:
         center_coord=center_coords, incl=this_incl, pa=this_pa,
         ra=ra_map, dec=dec_map, return_offset=True)
 
+    # import the environment mask
+    hdulist = fits.open('../envrm_mask/masks_v5_simple/'+this_source.upper()+'_simple.fits')
+    # reproject environment mask to the moment maps
+    envrm_mask, _ = reproject_interp(hdulist, wcs, shape_out=np.shape(cov_map))
+    envrm_mask = envrm_mask.astype(int)
+
     # Make the models
-    flat_model = (cov_map > 0.25)*1.0
+    mask = (cov_map > 0.25)
+    if do_envrm_mask:
+        mask = mask | (envrm_mask==6)
+
+    flat_model = mask*1.0
     flat_model = flat_model/np.nansum(flat_model)
 
-    exp_model = (cov_map > 0.25)*(np.exp(-1.0*radius_map/this_lstar_deg))
+    exp_model = mask*(np.exp(-1.0*radius_map/this_lstar_deg))
     exp_model = exp_model/np.nansum(exp_model)
 
     # add the model sample the radial profile
     radius_map_pc = radius_map * 3600 * 4.85 * this_dist
-    rad_model = (cov_map > 0.25) * radial_profile_func(radius_map_pc)
+    rad_model = mask * radial_profile_func(radius_map_pc)
     rad_model = rad_model/np.nansum(rad_model)
 
     # change by Hao He (July 1st, 2024), add the model to sample the GMCs based on the kpc-scale CO emission
-    Ico_model = (cov_map > 0.25)*kpc_mom0_map 
+    Ico_model = mask*kpc_mom0_map 
     Ico_model = Ico_model/np.nansum(Ico_model)
 
     # Write to disk
