@@ -10,20 +10,23 @@ from utils_spacing import *
 from reproject import reproject_interp
 
 weight_map_dir = root_dir+'weight_arm_maps/'
+sim_dir = root_dir+'sim_results_arm/'
 
 dry_run = False
 
 niters = 1e4
 verbose = True
 
-do_envrm_mask = False
+do_envrm_mask = True
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Run random placements
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 # temporarily remove ngc0253 since it does not have environmental mask
-# source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']] 
+if do_envrm_mask:
+    source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']] 
+
 
 for this_source in source_list:
 

@@ -10,14 +10,14 @@ cat_root_dir =  root_dir+'cloud_cats_fits/'
 
 # set the fiducial cloud catalog
 reslt = '150pc'
-senstvt = 'lo'
+senstvt = 'hi'
 fid_cat_dir =  cat_root_dir+'homogen_'+senstvt+'_'+reslt+'_props/'
 # fid_cat_dir =  cat_root_dir+'homogen_hi_90pc_props/'
 
 cov_map_dir = root_dir+'data/coverage_maps/'
 # mod_map_dir = root_dir+'model_maps/'
 mom0_map_dir = root_dir+'data/mom0/'
-sim_dir =  root_dir+'sim_results/'
+# sim_dir =  root_dir+'sim_results/'
 # corr_dir = root_dir+'corr_results/'
 # corr_dir = root_dir + 'corr_150pc_lo_results/'
 derived_root_dir = '/vol/alcina/data1/hhe/two_point_correlation/delivery_v4p0/'

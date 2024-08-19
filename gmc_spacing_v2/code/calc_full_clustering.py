@@ -7,6 +7,8 @@ from utils_spacing import *
 from astropy.utils.console import ProgressBar
 
 corr_dir = '../corr_hi_150pc_arm_results/'
+sim_dir = root_dir+'sim_results_arm/'
+
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
