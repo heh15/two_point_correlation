@@ -15,8 +15,6 @@ fid_cat_dir =  cat_root_dir+'homogen_'+senstvt+'_'+reslt+'_props/'
 # fid_cat_dir =  cat_root_dir+'homogen_hi_90pc_props/'
 
 cov_map_dir = root_dir+'data/coverage_maps/'
-weight_map_dir = root_dir+'weight_maps/'
-mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
 # mod_map_dir = root_dir+'model_maps/'
 mom0_map_dir = root_dir+'data/mom0/'
 sim_dir =  root_dir+'sim_results/'

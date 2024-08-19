@@ -25,7 +25,8 @@ nbins = len(bins_lo)
 # bins_mid = bins_geo
 # nbins = len(bins_lo)
 
-outfile_dir = '../cross_results/'
+mod_map_dir = '../model_maps_lo_150pc/'
+outfile_dir = '../cross_150pc_lo_results/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise

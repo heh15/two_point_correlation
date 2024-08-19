@@ -10,6 +10,8 @@ from key_dirs import *
 # from aklpyutils.utils_spacing import *
 from utilsForTwopt.utils_spacing import *
 
+mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
+
 dry_run = False
 verbose = True
 
