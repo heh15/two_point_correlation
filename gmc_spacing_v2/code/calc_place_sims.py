@@ -9,7 +9,7 @@ from utils_spacing import *
 
 from reproject import reproject_interp
 
-weight_map_dir = root_dir+'weight_arm_maps/'
+weight_map_dir = root_dir+'weight_maps_arm/'
 sim_dir = root_dir+'sim_results_arm/'
 
 dry_run = False
@@ -18,6 +18,7 @@ niters = 1e4
 verbose = True
 
 do_envrm_mask = True
+do_strict_mask = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Run random placements
@@ -43,7 +44,7 @@ for this_source in source_list:
     this_array = array_dict[this_source]
     this_cov_file = fid_cov_dict[this_source]
     this_fid_broad_map = broad_map_dict[this_source]
-
+    this_fid_strict_mask = strict_mask_dict[this_source]
 
     # Read the radial profile
     radial_profile_table = Table.read('../radial_profile/'
@@ -77,15 +78,25 @@ for this_source in source_list:
         ra=ra_map, dec=dec_map, return_offset=True)
 
     # import the environment mask
-    hdulist = fits.open('../envrm_mask/masks_v5_simple/'+this_source.upper()+'_simple.fits')
-    # reproject environment mask to the moment maps
-    envrm_mask, _ = reproject_interp(hdulist, wcs, shape_out=np.shape(cov_map))
-    envrm_mask = envrm_mask.astype(int)
+    if do_envrm_mask:
+        hdulist = fits.open('../envrm_mask/masks_v5_simple/'+this_source.upper()+'_simple.fits')
+        # reproject environment mask to the moment maps
+        envrm_mask, _ = reproject_interp(hdulist, wcs, shape_out=np.shape(cov_map))
+        envrm_mask = envrm_mask.astype(int)
+
+        with fits.open(this_fid_strict_mask) as hdul:
+            strict_mask = hdul[0].data
+        strict_mask = np.max(strict_mask, axis=0)
 
     # Make the models
     mask = (cov_map > 0.25)
     if do_envrm_mask:
-        mask = mask | (envrm_mask==6)
+        mask = mask & (envrm_mask==6)
+    if do_strict_mask:
+        mask = mask & strict_mask 
+    
+    if len(np.where(mask>0)[0]) == 0:
+        continue
 
     flat_model = mask*1.0
     flat_model = flat_model/np.nansum(flat_model)

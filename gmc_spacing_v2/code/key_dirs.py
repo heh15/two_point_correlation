@@ -116,6 +116,7 @@ array_dict = {}
 deets_dict = {}
 mom0_map_dict = {}
 broad_map_dict = {}
+strict_mask_dict = {}
 
 missing_cats = 0
 missing_coverage = 0
@@ -172,7 +173,14 @@ for this_source in source_list:
         mom0_map_dict[this_source] = this_fid_mom0_map
     else:
         print("Missing fiducial mom0 for ", this_source)
-        
+    # import the strict mask    
+    this_fid_strict_mask = this_derived_dir + this_source + '_' + array_dict[this_source] + \
+       '_co21_'+reslt+'_strictmask.fits'
+    if os.path.isfile(this_fid_strict_mask):
+        strict_mask_dict[this_source] = this_fid_strict_mask
+    else:
+        print("Missing fiducial strict mask for ", this_source)
+
 #print(fid_ncloud_list)
 ncloud_ra = np.array(fid_ncloud_list)
 max_nclouds = np.nanmax(ncloud_ra)

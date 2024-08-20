@@ -6,7 +6,7 @@ from key_dirs import *
 from utils_spacing import *
 from astropy.utils.console import ProgressBar
 
-corr_dir = '../corr_hi_150pc_arm_results/'
+corr_dir = '../corr_results_hi_150pc_arm/'
 sim_dir = root_dir+'sim_results_arm/'
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
