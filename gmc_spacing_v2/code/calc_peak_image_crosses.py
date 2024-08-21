@@ -8,7 +8,7 @@ from utilsForTwopt.utils_spacing import *
 dry_run = False
 verbose = True
 
-bins_lo = np.arange(20)*25.-12.5
+bins_lo = np.arange(80)*25.-12.5
 bins_hi = bins_lo+25.
 bins_mid = (bins_lo+bins_hi)*0.5
 nbins = len(bins_lo)
@@ -25,8 +25,8 @@ nbins = len(bins_lo)
 # bins_mid = bins_geo
 # nbins = len(bins_lo)
 
-mod_map_dir = '../model_maps_lo_150pc/'
-outfile_dir = '../cross_150pc_lo_results/'
+mod_map_dir = '../model_maps_hi_150pc/'
+outfile_dir = '../cross_results/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise
@@ -66,8 +66,7 @@ for this_source in source_list:
     this_mom0_file = mom0_map_dict[this_source]
     model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
     modelbeam_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
-#     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'    
-    
+   
     # note the kpc resolution map
     this_1kpc_mom0_file = broad_map_dict[this_source]
 
@@ -84,6 +83,7 @@ for this_source in source_list:
 
     this_1kpc_map_hdulist = fits.open(this_1kpc_mom0_file)
     this_1kpc_map = this_1kpc_map_hdulist[0].data
+
     # Make coordinates
     
     hdr = hdulist[0].header
@@ -97,6 +97,7 @@ for this_source in source_list:
     x_map, y_map  = wcs.wcs_world2pix(peak_ra,peak_dec,0)
     peak_val = mom0_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
     peak_1kpc_val = this_1kpc_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
+
     # Deproject the map
     
     center_coords = [this_ra, this_dec]
@@ -144,8 +145,37 @@ for this_source in source_list:
     real_tab['y_mean'] = np.nanmean(y_norm, axis=0) 
     real_tab['y_median'] = np.nanmedian(y_norm, axis=0)
     real_tab['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
-    real_tab.write(outfile_name, format='fits', overwrite=True)
-    
+    real_tab.write(outfile_name, format='fits', overwrite=True)    
+
+    # calculate the crosses for the kpc-scale model map
+
+    all_model_crosses_1kpc, all_model_counts_1kpc = \
+        calc_many_peak_image_crosses(
+            peak_val*0+1, peak_deltax, peak_deltay,
+            this_1kpc_map, map_deltax, map_deltay,
+            bins_lo, bins_hi)
+
+    outfile_name = outfile_dir + this_source + '_modelcross_1kpc.fits'
+    nan_mask = (np.isnan(all_model_crosses_1kpc)) | (np.isnan(all_model_counts_1kpc))
+    avrg_intst_maskd = np.ma.masked_array(all_model_crosses_1kpc / all_model_counts_1kpc,
+                                        nan_mask)
+    y_norm = avrg_intst_maskd / (avrg_intst_maskd[:,0])[:,np.newaxis]
+
+    model_tab_1kpc  = Table()
+    model_tab_1kpc['bins_xlo'] = bins_lo
+    model_tab_1kpc['bins_xmid'] = bins_mid
+    model_tab_1kpc['bins_xhi'] = bins_hi
+    model_tab_1kpc['I_mean']  = np.ma.average(avrg_intst_maskd, axis=0)
+    model_tab_1kpc['I_mean_weightd'] = np.ma.average(avrg_intst_maskd,
+                                            weights= peak_val, axis=0)
+    model_tab_1kpc['I_median']  = np.nanmedian(all_model_crosses_1kpc/all_model_counts_1kpc, axis=0)
+    model_tab_1kpc['y_mean'] = np.nanmean(y_norm, axis=0)
+    model_tab_1kpc['y_median'] = np.nanmedian(y_norm, axis=0)
+    model_tab_1kpc['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
+    model_tab_1kpc.write(outfile_name, format='fits', overwrite=True)
+
+    # calculate the crosses for the model image
+
     all_model_crosses, all_model_counts = \
         calc_many_peak_image_crosses(
             peak_val*0+1, peak_deltax, peak_deltay,
@@ -171,6 +201,8 @@ for this_source in source_list:
     model_tab['y_median'] = np.nanmedian(y_norm, axis=0)
     model_tab['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
     model_tab.write(outfile_name, format='fits', overwrite=True)    
+
+    # calculate the crosses for model image convolved with beam
 
     all_modelbeam_crosses, all_modelbeam_counts = \
         calc_many_peak_image_crosses(
@@ -219,6 +251,7 @@ for this_source in source_list:
     this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
     this_cat_rad['radial_modelbeam_val'] = all_modelbeam_crosses / all_modelbeam_counts
     this_cat_rad['radial_singlgmc_val'] = gaussian_rad
+    this_cat_rad['radial_val_model_1kpc'] = all_model_crosses_1kpc / all_model_counts_1kpc
     # save it to a new table
     outfile_name = '../cloud_radial_profile/'+this_source+'_'+reslt+'_'+senstvt+'_cat.fits'
     this_cat_rad.write(outfile_name, format='fits', overwrite=True)
