@@ -25,8 +25,8 @@ nbins = len(bins_lo)
 # bins_mid = bins_geo
 # nbins = len(bins_lo)
 
-mod_map_dir = '../model_maps_hi_150pc/'
-outfile_dir = '../cross_results/'
+mod_map_dir = '../model_maps_hi_60pc/'
+outfile_dir = '../cross_results_hi_60pc/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise
@@ -35,6 +35,7 @@ outfile_dir = '../cross_results/'
 # Place gaussians at each catalog peak
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+# source_list = ['ngc0253']
 for this_source in source_list:
 
     print("")
@@ -234,7 +235,7 @@ for this_source in source_list:
     this_width_sig = np.array(np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
     peak_values = flux_val / (2*math.pi*this_width_sig**2)
     gaussian_rad = []
-    for i, peak in enumerate(peak_values):
+    for i, peak in enumerate(peak_val):
         gaussian_rad.append(peak * np.exp(-1./2.*bins_mid**2/this_width_sig[i]**2))
     gaussian_rad = np.array(gaussian_rad)
 
