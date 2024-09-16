@@ -9,15 +9,15 @@ from utils_spacing import *
 
 from reproject import reproject_interp
 
-weight_map_dir = root_dir+'weight_maps_arm/'
-sim_dir = root_dir+'sim_results_arm/'
+weight_map_dir = root_dir+'weight_maps/'
+sim_dir = root_dir+'sim_results_bright/'
 
 dry_run = False
 
 niters = 1e4
 verbose = True
 
-do_envrm_mask = True
+do_envrm_mask = False
 do_strict_mask = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -133,7 +133,6 @@ for this_source in source_list:
 
     # Read the fiducial catalog
     this_cat = fid_cat_dict[this_source]
-
     this_nclouds = fid_ncloud_dict[this_source]
     n_clouds_to_place = this_nclouds*niters
 

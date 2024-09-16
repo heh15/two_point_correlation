@@ -6,8 +6,8 @@ from key_dirs import *
 from utils_spacing import *
 from astropy.utils.console import ProgressBar
 
-corr_dir = '../corr_results_hi_150pc_arm/'
-sim_dir = root_dir+'sim_results_arm/'
+corr_dir = '../corr_results_hi_150pc_bright/'
+sim_dir = root_dir+'sim_results/'
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
@@ -31,7 +31,8 @@ exp_vs_flat_fac = 10
 do_exp_vs_flat = False
 do_monte = False
 
-do_envrm_corr = True
+do_envrm_corr = False
+do_select_bright = True
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Loop over sources
@@ -63,6 +64,8 @@ for this_source in source_list:
     this_real_cat = Table.read(fid_cat_dict[this_source].replace('_props.fits','_props_valueadded.fits'))
     if do_envrm_corr == True:
         this_real_cat = this_real_cat[this_real_cat['ENV_ARM']==1] 
+    if do_select_bright == True:
+        this_real_cat = this_real_cat[this_real_cat['TMAX_K']>0.5]
     if len(this_real_cat) < thresh_cloud_count:
         continue
     x_real = this_real_cat['DELTAX_DEG']*deg_to_pc

@@ -21,6 +21,7 @@ verbose = True
 
 scale_factors = []
 
+source_list = ['ngc0253']
 for this_source in source_list:
 
     print("")
