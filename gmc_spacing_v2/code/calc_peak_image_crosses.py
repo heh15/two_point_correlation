@@ -25,8 +25,8 @@ nbins = len(bins_lo)
 # bins_mid = bins_geo
 # nbins = len(bins_lo)
 
-mod_map_dir = '../model_maps_hi_60pc/'
-outfile_dir = '../cross_results_hi_60pc/'
+mod_map_dir = '../model_maps_hi_150pc/'
+outfile_dir = '../cross_results/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise
@@ -247,6 +247,7 @@ for this_source in source_list:
     this_cat_rad['bar_lab'] = this_cat['ENV_BAR']
     this_cat_rad['peak_val'] = peak_val
     this_cat_rad['peak_1kpc_val'] = peak_1kpc_val
+    this_cat_rad['radius_1sigma_pc'] = this_width_sig 
     this_cat_rad['radial_bins'] = np.tile(bins_mid, (len(this_cat),1))
     this_cat_rad['radial_real_val'] = all_real_crosses / all_real_counts
     this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
