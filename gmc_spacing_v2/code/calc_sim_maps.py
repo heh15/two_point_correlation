@@ -11,6 +11,7 @@ from key_dirs import *
 from utilsForTwopt.utils_spacing import *
 
 mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
+mod_map_dir = root_dir+'model_maps_hi_150pc_peak/'
 
 dry_run = False
 verbose = True
@@ -21,7 +22,6 @@ verbose = True
 
 scale_factors = []
 
-source_list = ['ngc0253']
 for this_source in source_list:
 
     print("")
@@ -67,12 +67,12 @@ for this_source in source_list:
     peak_fwhm_pc = np.array(2.354*np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
     peak_fwhm = peak_fwhm_pc / 4.85 / this_dist / 3600
     mock_map = make_mock_image(
-        flux_val, peak_ra, peak_dec, beam_fwhm,
+        peak_val, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
 
     # make the model map with fixed beam
     mock_map_beam = make_mock_image(
-        flux_val, peak_ra, peak_dec, beam_fwhm,
+        peak_val, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=beam_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
 
 
