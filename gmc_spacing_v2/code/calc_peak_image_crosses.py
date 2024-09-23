@@ -25,8 +25,9 @@ nbins = len(bins_lo)
 # bins_mid = bins_geo
 # nbins = len(bins_lo)
 
-mod_map_dir = '../model_maps_hi_150pc/'
-outfile_dir = '../cross_results/'
+mod_map_dir = '../model_maps_hi_150pc_Tmax/'
+outfile_dir = '../cross_results_Tmax/'
+cloud_rad_dir = '../cloud_rad_profl_Tmax/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise
@@ -255,7 +256,7 @@ for this_source in source_list:
     this_cat_rad['radial_singlgmc_val'] = gaussian_rad
     this_cat_rad['radial_val_model_1kpc'] = all_model_crosses_1kpc / all_model_counts_1kpc
     # save it to a new table
-    outfile_name = '../cloud_radial_profile/'+this_source+'_'+reslt+'_'+senstvt+'_cat.fits'
+    outfile_name = cloud_rad_dir+this_source+'_'+reslt+'_'+senstvt+'_cat.fits'
     this_cat_rad.write(outfile_name, format='fits', overwrite=True)
 
     # Now run the 

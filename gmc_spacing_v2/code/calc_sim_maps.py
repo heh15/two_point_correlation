@@ -11,7 +11,7 @@ from key_dirs import *
 from utilsForTwopt.utils_spacing import *
 
 mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
-mod_map_dir = root_dir+'model_maps_hi_150pc_peak/'
+mod_map_dir = root_dir+'model_maps_hi_150pc_Tmax/'
 
 dry_run = False
 verbose = True
@@ -45,6 +45,7 @@ for this_source in source_list:
     peak_ra = np.array(this_cat['XMAX_DEG'])
     peak_dec = np.array(this_cat['YMAX_DEG']) 
     flux_val = np.array(this_cat['FLUX_KKMS_PC2'])
+    Tmax = np.array(this_cat['TMAX_K'])
     # Extract the moment0 file
     this_mom0_file = mom0_map_dict[this_source]
     
@@ -67,14 +68,19 @@ for this_source in source_list:
     peak_fwhm_pc = np.array(2.354*np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
     peak_fwhm = peak_fwhm_pc / 4.85 / this_dist / 3600
     mock_map = make_mock_image(
-        peak_val, peak_ra, peak_dec, beam_fwhm,
+        Tmax, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
+    peak_temp = mock_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
+    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
+    mock_map = mock_map * ratio
 
     # make the model map with fixed beam
     mock_map_beam = make_mock_image(
-        peak_val, peak_ra, peak_dec, beam_fwhm,
+        Tmax, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=beam_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
-
+    peak_temp = mock_map_beam[np.round(y_map).astype(int),np.round(x_map).astype(int)]
+    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
+    mock_map_beam = mock_map_beam * ratio
 
     # Scale up the model map to conserve the flux
     scale_factor = np.nansum(mom0_map) / np.nansum(mock_map)
