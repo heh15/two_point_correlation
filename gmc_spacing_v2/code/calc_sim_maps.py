@@ -20,8 +20,8 @@ verbose = True
 # Place gaussians at each catalog peak
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-scale_factors = []
-
+flux_fracs = []
+source_list = ['ngc0253']
 for this_source in source_list:
 
     print("")
@@ -48,10 +48,23 @@ for this_source in source_list:
     Tmax = np.array(this_cat['TMAX_K'])
     # Extract the moment0 file
     this_mom0_file = mom0_map_dict[this_source]
-    
+    # Extract the 1kpc map file
+    this_1kpc_mom0_file = broad_map_dict[this_source]
+    # Extract the 1kpc strict mask file
+    this_1kpc_strict_mask_file = strict_1kpc_mask_dict[this_source] 
+
     # Read the file
     hdulist = fits.open(this_mom0_file)
     mom0_map = hdulist[0].data
+
+    # Read the kpc file
+    this_1kpc_map_hdulist = fits.open(this_1kpc_mom0_file)
+    this_1kpc_map = this_1kpc_map_hdulist[0].data
+
+    # Read the kpc strict mask
+    with fits.open(this_1kpc_strict_mask_file) as hdul:
+        strict_mask_1kpc = hdul[0].data
+        strict_mask_1kpc = np.max(strict_mask_1kpc, axis=0)
 
     # Make coordinates
     hdr = hdulist[0].header
@@ -71,7 +84,7 @@ for this_source in source_list:
         Tmax, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
     peak_temp = mock_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
+    ratio = np.nanmedian(peak_val / peak_temp)
     mock_map = mock_map * ratio
 
     # make the model map with fixed beam
@@ -79,29 +92,42 @@ for this_source in source_list:
         Tmax, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=beam_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
     peak_temp = mock_map_beam[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
+    ratio = np.nanmedian(peak_val / peak_temp)
     mock_map_beam = mock_map_beam * ratio
 
     # Scale up the model map to conserve the flux
-    scale_factor = np.nansum(mom0_map) / np.nansum(mock_map)
-    print(scale_factor)
-    scale_factors.append(scale_factor)
+    flux_frac = np.nansum(mock_map) / np.nansum(mom0_map)
+    print(flux_frac)
+    flux_fracs.append(flux_frac)
+
+    # Make the model map by adding the emission not captured by GMC catalogs
+    ratio = np.nansum(mom0_map) * (1-flux_frac) / np.nansum(strict_mask_1kpc)
+    mock_map_plus_bakgrd =  mock_map + strict_mask_1kpc * ratio
+#     for i in range(2):
+#         peak_temp = mock_map_plus_bakgrd[np.round(y_map).astype(int),np.round(x_map).astype(int)]
+#         ratio = np.nanmedian(peak_val / peak_temp)
+#         mock_map_plus_bakgrd = mock_map_plus_bakgrd * ratio
+#         flux_frac = np.nansum(mock_map_plus_bakgrd) / np.nansum(mom0_map)
+#         mock_map_plus_bakgrd = mock_map_plus_bakgrd + this_1kpc_map * (1-flux_frac) 
 
     # Write to disk
     model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
-#     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
     model_hdu = fits.PrimaryHDU(data=mock_map,header=hdr)
     model_hdu.writeto(model_file, overwrite=True)
 
     # write the model image with fixed beam size
     model_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
-#     model_file = mod_map_dir+this_source+'_source_model_90pc.fits'
     model_hdu = fits.PrimaryHDU(data=mock_map_beam,header=hdr)
+    model_hdu.writeto(model_file, overwrite=True)
+
+    # write the model image with backgroud emission
+    model_file = mod_map_dir+this_source+'_source_model_bakgrd_'+reslt+'.fits'
+    model_hdu = fits.PrimaryHDU(data=mock_map_plus_bakgrd, header=hdr)
     model_hdu.writeto(model_file, overwrite=True)
 
 galaxy_fluxes = {}
 galaxy_fluxes['Name'] = source_list
-galaxy_fluxes['ratio'] = scale_factors
+galaxy_fluxes['ratio'] = flux_fracs
 
 with open('galaxy_fluxes.pkl', 'wb') as fp:
     pickle.dump(galaxy_fluxes, fp)

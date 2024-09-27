@@ -117,6 +117,7 @@ deets_dict = {}
 mom0_map_dict = {}
 broad_map_dict = {}
 strict_mask_dict = {}
+strict_1kpc_mask_dict = {}
 
 missing_cats = 0
 missing_coverage = 0
@@ -180,6 +181,13 @@ for this_source in source_list:
         strict_mask_dict[this_source] = this_fid_strict_mask
     else:
         print("Missing fiducial strict mask for ", this_source)
+    # import the strict mask for 1 kpc map
+    this_1kpc_strict_mask = this_derived_dir + this_source + '_' + array_dict[this_source] + \
+        '_co21_1kpc_strictmask.fits'
+    if os.path.isfile(this_1kpc_strict_mask):
+        strict_1kpc_mask_dict[this_source] = this_1kpc_strict_mask
+    else:
+        print("Missing fiducial 1kpc strict mask for ", this_source)
 
 #print(fid_ncloud_list)
 ncloud_ra = np.array(fid_ncloud_list)

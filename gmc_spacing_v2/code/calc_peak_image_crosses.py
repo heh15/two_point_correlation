@@ -68,12 +68,12 @@ for this_source in source_list:
     this_mom0_file = mom0_map_dict[this_source]
     model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
     modelbeam_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
-   
+    modelbakgrd_file = mod_map_dir+this_source+'_source_model_bakgrd_'+reslt+'.fits'
+
     # note the kpc resolution map
     this_1kpc_mom0_file = broad_map_dict[this_source]
 
-    # Read the file
-    
+    # Read the file 
     hdulist = fits.open(this_mom0_file)
     mom0_map = hdulist[0].data
 
@@ -82,6 +82,9 @@ for this_source in source_list:
 
     modelbeam_hdulist = fits.open(modelbeam_file)
     modelbeam_map = modelbeam_hdulist[0].data
+
+    modelbakgrd_hdulist = fits.open(modelbakgrd_file)
+    modelbakgrd_map = modelbakgrd_hdulist[0].data
 
     this_1kpc_map_hdulist = fits.open(this_1kpc_mom0_file)
     this_1kpc_map = this_1kpc_map_hdulist[0].data
@@ -231,6 +234,13 @@ for this_source in source_list:
     modelbeam_tab['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
     modelbeam_tab.write(outfile_name, format='fits', overwrite=True) 
 
+    # calculate the crosses for model image with background emission 
+    all_modelbakgrd_crosses, all_modelbakgrd_counts = \
+        calc_many_peak_image_crosses(
+            peak_val*0+1, peak_deltax, peak_deltay,
+            modelbakgrd_map, map_deltax, map_deltay,
+            bins_lo, bins_hi)
+
     # calculate the radial profile of individual clouds without including contribution from other GMCs
     flux_val = np.array(this_cat['FLUX_KKMS_PC2'])
     this_width_sig = np.array(np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
@@ -253,6 +263,7 @@ for this_source in source_list:
     this_cat_rad['radial_real_val'] = all_real_crosses / all_real_counts
     this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
     this_cat_rad['radial_modelbeam_val'] = all_modelbeam_crosses / all_modelbeam_counts
+    this_cat_rad['radial_modelbakgrd_val'] = all_modelbakgrd_crosses / all_modelbakgrd_counts
     this_cat_rad['radial_singlgmc_val'] = gaussian_rad
     this_cat_rad['radial_val_model_1kpc'] = all_model_crosses_1kpc / all_model_counts_1kpc
     # save it to a new table
