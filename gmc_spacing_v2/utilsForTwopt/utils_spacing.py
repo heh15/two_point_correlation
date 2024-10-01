@@ -498,7 +498,8 @@ def calc_many_peak_image_crosses(
     n_peaks = len(peak_val)
     n_bins = len(bins_lo)
     
-    all_crosses = np.zeros((n_peaks, n_bins))*np.nan
+    all_sums = np.zeros((n_peaks, n_bins))*np.nan
+    all_medians = np.zeros((n_peaks, n_bins))*np.nan
     all_counts = np.zeros((n_peaks, n_bins))*np.nan
     
     # Loop over peaks
@@ -510,15 +511,16 @@ def calc_many_peak_image_crosses(
 
         this_dist_img = np.sqrt((this_peak_x-img_x)**2 + (this_peak_y-img_y)**2)
 
-        this_cross, this_counts = calc_one_peak_image_cross(
+        this_sum, this_median, this_counts = calc_one_peak_image_cross(
             this_peak_val, img_val, this_dist_img,
             bins_lo, bins_hi, verbose=verbose)
 
-        all_crosses[ii,:] = this_cross
+        all_sums[ii,:] = this_sum
+        all_medians[ii,:] = this_median
         all_counts[ii,:] = this_counts
         
     # Return
-    return(all_crosses, all_counts)
+    return(all_sums, all_medians,  all_counts)
     
 def calc_one_peak_image_cross(
         peak_val, img_val, img_dist,
@@ -531,7 +533,8 @@ def calc_one_peak_image_cross(
 
     # Initialize
     n_bins = len(bins_lo)
-    bin_vals = np.zeros(n_bins)*np.nan
+    bin_sums = np.zeros(n_bins)*np.nan
+    bin_medians = np.zeros(n_bins)*np.nan
     bin_counts = np.zeros(n_bins)
 
     # Downselect to region of interest
@@ -548,17 +551,19 @@ def calc_one_peak_image_cross(
 
         in_this_bin = (vec_dist >= this_lo)*(vec_dist < this_hi)
         this_vec_val = vec_val[in_this_bin]        
-        this_bin_val = np.sum(this_vec_val*peak_val)
+        this_bin_sum = np.sum(this_vec_val*peak_val)
+        this_bin_median = np.nanmedian(this_vec_val*peak_val)
 
-        bin_vals[ii] = this_bin_val
+        bin_sums[ii] = this_bin_sum
         bin_counts[ii] = np.sum(np.isfinite(this_vec_val)*1.0)
+        bin_medians[ii] = this_bin_median
         
     # Print any requested info
     if verbose:
         pass
 
     # Return
-    return(bin_vals, bin_counts)
+    return(bin_sums, bin_medians, bin_counts)
     
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Add spacing related value to a pyCPROPS catalog

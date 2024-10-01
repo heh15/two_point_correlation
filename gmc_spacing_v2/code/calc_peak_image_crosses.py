@@ -125,7 +125,7 @@ for this_source in source_list:
     
     # Calculate the crosses for the real data
     
-    all_real_crosses, all_real_counts = \
+    all_real_crosses, all_real_medians, all_real_counts = \
         calc_many_peak_image_crosses(
             peak_val*0+1, peak_deltax, peak_deltay,
             mom0_map, map_deltax, map_deltay,
@@ -154,7 +154,7 @@ for this_source in source_list:
 
     # calculate the crosses for the kpc-scale model map
 
-    all_model_crosses_1kpc, all_model_counts_1kpc = \
+    all_model_crosses_1kpc, all_model_medians_1kpc, all_model_counts_1kpc = \
         calc_many_peak_image_crosses(
             peak_val*0+1, peak_deltax, peak_deltay,
             this_1kpc_map, map_deltax, map_deltay,
@@ -181,7 +181,7 @@ for this_source in source_list:
 
     # calculate the crosses for the model image
 
-    all_model_crosses, all_model_counts = \
+    all_model_crosses, all_model_medians, all_model_counts = \
         calc_many_peak_image_crosses(
             peak_val*0+1, peak_deltax, peak_deltay,
             model_map, map_deltax, map_deltay,
@@ -209,7 +209,7 @@ for this_source in source_list:
 
     # calculate the crosses for model image convolved with beam
 
-    all_modelbeam_crosses, all_modelbeam_counts = \
+    all_modelbeam_crosses, all_modelbeam_medians, all_modelbeam_counts = \
         calc_many_peak_image_crosses(
             peak_val*0+1, peak_deltax, peak_deltay,
             modelbeam_map, map_deltax, map_deltay,
@@ -235,7 +235,7 @@ for this_source in source_list:
     modelbeam_tab.write(outfile_name, format='fits', overwrite=True) 
 
     # calculate the crosses for model image with background emission 
-    all_modelbakgrd_crosses, all_modelbakgrd_counts = \
+    all_modelbakgrd_crosses, all_modelbakgrd_medians, all_modelbakgrd_counts = \
         calc_many_peak_image_crosses(
             peak_val*0+1, peak_deltax, peak_deltay,
             modelbakgrd_map, map_deltax, map_deltay,
@@ -261,8 +261,11 @@ for this_source in source_list:
     this_cat_rad['radius_1sigma_pc'] = this_width_sig 
     this_cat_rad['radial_bins'] = np.tile(bins_mid, (len(this_cat),1))
     this_cat_rad['radial_real_val'] = all_real_crosses / all_real_counts
+    this_cat_rad['radial_real_median'] = all_real_medians
     this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
+    this_cat_rad['radial_model_median'] = all_model_medians
     this_cat_rad['radial_modelbeam_val'] = all_modelbeam_crosses / all_modelbeam_counts
+    this_cat_rad['radial_modelbeam_median'] = all_modelbeam_medians
     this_cat_rad['radial_modelbakgrd_val'] = all_modelbakgrd_crosses / all_modelbakgrd_counts
     this_cat_rad['radial_singlgmc_val'] = gaussian_rad
     this_cat_rad['radial_val_model_1kpc'] = all_model_crosses_1kpc / all_model_counts_1kpc
