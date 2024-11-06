@@ -67,6 +67,7 @@ for this_source in source_list:
     
     this_mom0_file = mom0_map_dict[this_source]
     model_file = mod_map_dir+this_source+'_source_model_'+reslt+'.fits'
+    model_elptc_file = mod_map_dir+this_source+'_source_model_elptc_'+reslt+'.fits'
     modelbeam_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
     modelbakgrd_file = mod_map_dir+this_source+'_source_model_bakgrd_'+reslt+'.fits'
 
@@ -79,6 +80,9 @@ for this_source in source_list:
 
     model_hdulist = fits.open(model_file)
     model_map = model_hdulist[0].data
+
+    model_elptc_hdulist = fits.open(model_elptc_file)
+    model_elptc_map = model_elptc_hdulist[0].data
 
     modelbeam_hdulist = fits.open(modelbeam_file)
     modelbeam_map = modelbeam_hdulist[0].data
@@ -207,6 +211,13 @@ for this_source in source_list:
     model_tab['y_mean_weightd'] = np.ma.average(y_norm, weights=peak_val, axis=0)
     model_tab.write(outfile_name, format='fits', overwrite=True)    
 
+    # calculate the crosses for the model image with elliptical structure
+    all_model_elptc_crosses, all_model_elptc_medians, all_model_elptc_counts = \
+        calc_many_peak_image_crosses(
+            peak_val*0+1, peak_deltax, peak_deltay,
+            model_elptc_map, map_deltax, map_deltay,
+            bins_lo, bins_hi)
+
     # calculate the crosses for model image convolved with beam
 
     all_modelbeam_crosses, all_modelbeam_medians, all_modelbeam_counts = \
@@ -264,6 +275,7 @@ for this_source in source_list:
     this_cat_rad['radial_real_median'] = all_real_medians
     this_cat_rad['radial_model_val'] = all_model_crosses / all_model_counts
     this_cat_rad['radial_model_median'] = all_model_medians
+    this_cat_rad['radial_model_elptc_val'] = all_model_elptc_crosses / all_model_elptc_counts
     this_cat_rad['radial_modelbeam_val'] = all_modelbeam_crosses / all_modelbeam_counts
     this_cat_rad['radial_modelbeam_median'] = all_modelbeam_medians
     this_cat_rad['radial_modelbakgrd_val'] = all_modelbakgrd_crosses / all_modelbakgrd_counts

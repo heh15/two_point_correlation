@@ -428,7 +428,7 @@ def calc_twopoint(
 
 def make_mock_image(
         flux_val, peak_ra, peak_dec, beam_fwhm, ra_map, dec_map, gal_dist, peak_fwhm=None, 
-        mask_to_blank=None, verbose=True, value_type='peak'):
+        mask_to_blank=None, verbose=True, value_type='peak', peak_fwhm_min=None, pa=0):
     """Take a list of peak values and positions and sizes and a coordinate
     grid and fill in the grid with two dimensional Gaussians. Useful
     to build a control for peak/image cross-correlation.
@@ -454,17 +454,28 @@ def make_mock_image(
         this_dec = peak_dec[ii]
 
         # Deproject ra and dec to dx and dy and cylindrical coords
-        center_coords = [this_ra, this_dec]        
-        this_dist = (deproject(
-            center_coord=center_coords, incl=0.0, pa=0.0,
-            ra=ra_map, dec=dec_map, return_offset=True))[0]
-
-        if fixed_fwhm:
-            this_width_sig = peak_fwhm/2.354
+        center_coords = [this_ra, this_dec]
+        if (type(pa) == type(1.0)) or \
+            (type(pa) == type(1)):
+            pa_cloud = pa
         else:
-            this_width_sig = peak_fwhm[ii]/2.354
+            pa_cloud = pa[ii]
+        this_dist, this_posang, this_x_offset, this_y_offset = deproject(
+            center_coord=center_coords, incl=0.0, pa=pa_cloud,
+            ra=ra_map, dec=dec_map, return_offset=True)
         
-        this_source = np.exp(-1./2.*this_dist**2/this_width_sig**2)
+        if peak_fwhm_min is None:
+            if fixed_fwhm:
+                this_width_sig = peak_fwhm/2.354
+            else:
+                this_width_sig = peak_fwhm[ii]/2.354 
+            this_source = np.exp(-1./2.*this_dist**2/this_width_sig**2)
+        else:
+            this_width_maj = peak_fwhm[ii] / 2.354
+            this_width_min = peak_fwhm_min[ii] / 2.354 
+            this_source = np.exp(-1./2.*(this_x_offset**2/this_width_maj**2\
+                    +this_y_offset**2/this_width_min**2))
+
         if value_type == 'peak':
             peak_value = flux_val[ii]
         else:

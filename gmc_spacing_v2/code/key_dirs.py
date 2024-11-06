@@ -2,6 +2,7 @@ from astropy.table import Table
 import glob, os
 import numpy as np
 from astropy.table import Table
+import math
 
 # Directories for Machado spacing project.
 root_dir = '../'
