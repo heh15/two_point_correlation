@@ -7,17 +7,17 @@ from scipy.interpolate import interp1d
 from key_dirs import *
 from utils_spacing import *
 
-from reproject import reproject_interp
+from reproject import reproject_interp, reproject_exact
 
-weight_map_dir = root_dir+'weight_maps/'
-sim_dir = root_dir+'sim_results_bright/'
+weight_map_dir = root_dir+'weight_maps_arm/'
+sim_dir = root_dir+'sim_results_arm/'
 
 dry_run = False
 
 niters = 1e4
 verbose = True
 
-do_envrm_mask = False
+do_envrm_mask = True
 do_strict_mask = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -81,7 +81,8 @@ for this_source in source_list:
     if do_envrm_mask:
         hdulist = fits.open('../envrm_mask/masks_v5_simple/'+this_source.upper()+'_simple.fits')
         # reproject environment mask to the moment maps
-        envrm_mask, _ = reproject_interp(hdulist, wcs, shape_out=np.shape(cov_map))
+        envrm_mask, _ = reproject_interp(hdulist, wcs, shape_out=np.shape(cov_map),
+                order='nearest-neighbor')
         envrm_mask = envrm_mask.astype(int)
 
         with fits.open(this_fid_strict_mask) as hdul:

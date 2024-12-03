@@ -6,8 +6,8 @@ from key_dirs import *
 from utils_spacing import *
 from astropy.utils.console import ProgressBar
 
-corr_dir = '../corr_results_hi_150pc_bright/'
-sim_dir = root_dir+'sim_results/'
+corr_dir = '../corr_results_hi_150pc_arm/'
+sim_dir = root_dir+'sim_results_arm/'
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
@@ -31,8 +31,8 @@ exp_vs_flat_fac = 10
 do_exp_vs_flat = False
 do_monte = False
 
-do_envrm_corr = False
-do_select_bright = True
+do_envrm_corr = True
+do_select_bright = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Loop over sources
