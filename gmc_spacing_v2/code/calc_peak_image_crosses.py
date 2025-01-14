@@ -25,9 +25,9 @@ nbins = len(bins_lo)
 # bins_mid = bins_geo
 # nbins = len(bins_lo)
 
-mod_map_dir = '../model_maps_hi_150pc_Tmax/'
-outfile_dir = '../cross_results_Tmax/'
-cloud_rad_dir = '../cloud_rad_profl_Tmax/'
+mod_map_dir = '../model_maps_hi_150pc_Tmax1/'
+outfile_dir = '../cross_results_hi_150pc_Tmax1/'
+cloud_rad_dir = '../cloud_rad_profl_Tmax1/'
 
 # assumes the astrometry of the mocks and the image are the same -
 # could fix this if any issues arise

@@ -11,7 +11,7 @@ from key_dirs import *
 from utilsForTwopt.utils_spacing import *
 
 mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
-mod_map_dir = root_dir+'model_maps_hi_150pc_Tmax/'
+mod_map_dir = root_dir+'model_maps_hi_150pc_Tmax1/'
 
 dry_run = False
 verbose = True
@@ -85,7 +85,7 @@ for this_source in source_list:
         Tmax, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
     peak_temp = mock_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-    ratio = np.nanmedian(peak_val / peak_temp)
+    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
     mock_map = mock_map * ratio
 
     # Make the model map with elliptical beam
@@ -95,7 +95,7 @@ for this_source in source_list:
         Tmax, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False), peak_fwhm_min=peak_fwhm_min, pa=(pa+90)) # conform to the function definition
     peak_temp = mock_map_elptc[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-    ratio = np.nanmedian(peak_val / peak_temp)
+    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
     mock_map_elptc = mock_map_elptc * ratio
 
     # make the model map with fixed beam
@@ -103,7 +103,7 @@ for this_source in source_list:
         Tmax, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=beam_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
     peak_temp = mock_map_beam[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-    ratio = np.nanmedian(peak_val / peak_temp)
+    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
     mock_map_beam = mock_map_beam * ratio
 
     # Scale up the model map to conserve the flux
