@@ -427,8 +427,7 @@ def calc_twopoint(
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 def make_mock_image(
-        flux_val, peak_ra, peak_dec, beam_fwhm, ra_map, dec_map, gal_dist, peak_fwhm=None, 
-        mask_to_blank=None, verbose=True, value_type='peak', peak_fwhm_min=None, pa=0):
+        flux_val, peak_ra, peak_dec, beam_fwhm, ra_map, dec_map, gal_dist, peak_fwhm=None, mask_to_blank=None, verbose=True, value_type='peak', func_type='Gaussian', peak_fwhm_min=None, pa=0):
     """Take a list of peak values and positions and sizes and a coordinate
     grid and fill in the grid with two dimensional Gaussians. Useful
     to build a control for peak/image cross-correlation.
@@ -460,21 +459,30 @@ def make_mock_image(
             pa_cloud = pa
         else:
             pa_cloud = pa[ii]
+        # calculate the (x_offset, y_offset) coordinates relative to the cloud 
+        # central position and in the direction of major and minor axis. 
         this_dist, this_posang, this_x_offset, this_y_offset = deproject(
             center_coord=center_coords, incl=0.0, pa=pa_cloud,
             ra=ra_map, dec=dec_map, return_offset=True)
         
-        if peak_fwhm_min is None:
-            if fixed_fwhm:
-                this_width_sig = peak_fwhm/2.354
+        if func_type == 'Gaussian':
+            if peak_fwhm_min is None:
+                if fixed_fwhm:
+                    this_width_sig = peak_fwhm/2.354
+                else:
+                    this_width_sig = peak_fwhm[ii]/2.354 
+                this_source = np.exp(-1./2.*this_dist**2/this_width_sig**2)
             else:
-                this_width_sig = peak_fwhm[ii]/2.354 
-            this_source = np.exp(-1./2.*this_dist**2/this_width_sig**2)
-        else:
-            this_width_maj = peak_fwhm[ii] / 2.354
-            this_width_min = peak_fwhm_min[ii] / 2.354 
-            this_source = np.exp(-1./2.*(this_x_offset**2/this_width_maj**2\
-                    +this_y_offset**2/this_width_min**2))
+                this_width_maj = peak_fwhm[ii] / 2.354
+                this_width_min = peak_fwhm_min[ii] / 2.354 
+                this_source = np.exp(-1./2.*(this_x_offset**2/this_width_maj**2\
+                        +this_y_offset**2/this_width_min**2))
+
+        if func_type == 'Lorentz':
+            gamma_x = peak_fwhm[ii] / 2
+            gamma_y = peak_fwhm_min[ii] / 2
+            denom = 1 + (this_x_offset/gamma_x)**2 + (this_y_offset/gamma_y)**2
+            this_source = 1 / denom
 
         if value_type == 'peak':
             peak_value = flux_val[ii]

@@ -11,7 +11,7 @@ from key_dirs import *
 from utilsForTwopt.utils_spacing import *
 
 mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
-mod_map_dir = root_dir+'model_maps_hi_150pc_Tmax1/'
+mod_map_dir = root_dir+'model_maps_hi_150pc_Tmax/'
 
 dry_run = False
 verbose = True
@@ -21,7 +21,7 @@ verbose = True
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 flux_fracs = []
-# source_list = ['ngc0253']
+# source_list = ['ngc3627']
 for this_source in source_list:
 
     print("")
@@ -98,6 +98,16 @@ for this_source in source_list:
     ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
     mock_map_elptc = mock_map_elptc * ratio
 
+    # Make the model map with elliptical Lorentz profile
+    peak_fwhm = 2.354 * this_cat['MOMMAJ_NODC_PC'] / 4.85 / this_dist / 3600
+    peak_fwhm_min = 2.354 * this_cat['MOMMIN_NODC_PC'] / 4.85 / this_dist / 3600
+    mock_map_Lorentz = make_mock_image(
+        Tmax, peak_ra, peak_dec, beam_fwhm,
+        ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False), func_type='Lorentz', peak_fwhm_min=peak_fwhm_min, pa=(pa+90)) # conform to the function definition
+    peak_temp = mock_map_Lorentz[np.round(y_map).astype(int),np.round(x_map).astype(int)]
+    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
+    mock_map_Lorentz = mock_map_Lorentz * ratio
+
     # make the model map with fixed beam
     mock_map_beam = make_mock_image(
         Tmax, peak_ra, peak_dec, beam_fwhm,
@@ -129,6 +139,11 @@ for this_source in source_list:
     # write the model image with elliptical beam size
     model_file = mod_map_dir+this_source+'_source_model_elptc_'+reslt+'.fits'
     model_hdu = fits.PrimaryHDU(data=mock_map_elptc,header=hdr)
+    model_hdu.writeto(model_file, overwrite=True)
+
+    # write the model image with 2D elliptical Lorentz profile
+    model_file = mod_map_dir+this_source+'_source_model_Lorentz_'+reslt+'.fits'
+    model_hdu = fits.PrimaryHDU(data=mock_map_Lorentz, header=hdr)
     model_hdu.writeto(model_file, overwrite=True)
 
     # write the model image with fixed beam size
