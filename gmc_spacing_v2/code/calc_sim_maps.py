@@ -11,7 +11,7 @@ from key_dirs import *
 from utilsForTwopt.utils_spacing import *
 
 mod_map_dir = root_dir+'model_maps_'+senstvt+'_'+reslt+'/'
-mod_map_dir = root_dir+'model_maps_hi_150pc_Tmax/'
+mod_map_dir = root_dir+'model_maps_hi_150pc_Tmax_vdep/'
 
 dry_run = False
 verbose = True
@@ -46,6 +46,7 @@ for this_source in source_list:
     peak_dec = np.array(this_cat['YMAX_DEG']) 
     flux_val = np.array(this_cat['FLUX_KKMS_PC2'])
     Tmax = np.array(this_cat['TMAX_K'])
+    vdep = np.array(this_cat['SIGV_KMS'])
     pa = np.array(this_cat['POSANG']) * 180 / math.pi # convert to deg
     # Extract the moment0 file
     this_mom0_file = mom0_map_dict[this_source]
@@ -82,7 +83,7 @@ for this_source in source_list:
     peak_fwhm_pc = np.array(2.354*np.sqrt(this_cat['MOMMAJ_NODC_PC']*this_cat['MOMMIN_NODC_PC']))
     peak_fwhm = peak_fwhm_pc / 4.85 / this_dist / 3600
     mock_map = make_mock_image(
-        Tmax, peak_ra, peak_dec, beam_fwhm,
+        Tmax*vdep, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
     peak_temp = mock_map[np.round(y_map).astype(int),np.round(x_map).astype(int)]
     ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
@@ -92,31 +93,31 @@ for this_source in source_list:
     peak_fwhm = 2.354 * this_cat['MOMMAJ_NODC_PC'] / 4.85 / this_dist / 3600
     peak_fwhm_min = 2.354 * this_cat['MOMMIN_NODC_PC'] / 4.85 / this_dist / 3600
     mock_map_elptc = make_mock_image(
-        Tmax, peak_ra, peak_dec, beam_fwhm,
+        Tmax*vdep, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False), peak_fwhm_min=peak_fwhm_min, pa=(pa+90)) # conform to the function definition
     peak_temp = mock_map_elptc[np.round(y_map).astype(int),np.round(x_map).astype(int)]
     ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
     mock_map_elptc = mock_map_elptc * ratio
 
-    # Make the model map with elliptical Lorentz profile
-    peak_fwhm = 2.354 * this_cat['MOMMAJ_NODC_PC'] / 4.85 / this_dist / 3600
-    peak_fwhm_min = 2.354 * this_cat['MOMMIN_NODC_PC'] / 4.85 / this_dist / 3600
-    mock_map_Lorentz = make_mock_image(
-        Tmax, peak_ra, peak_dec, beam_fwhm,
-        ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False), func_type='Lorentz', peak_fwhm_min=peak_fwhm_min, pa=(pa+90)) # conform to the function definition
-    peak_temp = mock_map_Lorentz[np.round(y_map).astype(int),np.round(x_map).astype(int)]
-    ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
-    mock_map_Lorentz = mock_map_Lorentz * ratio
+#     # Make the model map with elliptical Lorentz profile
+#     peak_fwhm = 2.354 * this_cat['MOMMAJ_NODC_PC'] / 4.85 / this_dist / 3600
+#     peak_fwhm_min = 2.354 * this_cat['MOMMIN_NODC_PC'] / 4.85 / this_dist / 3600
+#     mock_map_Lorentz = make_mock_image(
+#         Tmax, peak_ra, peak_dec, beam_fwhm,
+#         ra_map, dec_map, this_dist, peak_fwhm=peak_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False), func_type='Lorentz', peak_fwhm_min=peak_fwhm_min, pa=(pa+90)) # conform to the function definition
+#     peak_temp = mock_map_Lorentz[np.round(y_map).astype(int),np.round(x_map).astype(int)]
+#     ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
+#     mock_map_Lorentz = mock_map_Lorentz * ratio
 
     # make the model map with fixed beam
     mock_map_beam = make_mock_image(
-        Tmax, peak_ra, peak_dec, beam_fwhm,
+        Tmax*vdep, peak_ra, peak_dec, beam_fwhm,
         ra_map, dec_map, this_dist, peak_fwhm=beam_fwhm, mask_to_blank=(np.isfinite(mom0_map)==False))
     peak_temp = mock_map_beam[np.round(y_map).astype(int),np.round(x_map).astype(int)]
     ratio = np.nanmedian(peak_val) / np.nanmedian(peak_temp)
     mock_map_beam = mock_map_beam * ratio
 
-    # Scale up the model map to conserve the flux
+    # Calculate the flux fraction
     flux_frac = np.nansum(mock_map_elptc) / np.nansum(mom0_map)
     print(flux_frac)
     flux_fracs.append(flux_frac)
@@ -141,10 +142,10 @@ for this_source in source_list:
     model_hdu = fits.PrimaryHDU(data=mock_map_elptc,header=hdr)
     model_hdu.writeto(model_file, overwrite=True)
 
-    # write the model image with 2D elliptical Lorentz profile
-    model_file = mod_map_dir+this_source+'_source_model_Lorentz_'+reslt+'.fits'
-    model_hdu = fits.PrimaryHDU(data=mock_map_Lorentz, header=hdr)
-    model_hdu.writeto(model_file, overwrite=True)
+#     # write the model image with 2D elliptical Lorentz profile
+#     model_file = mod_map_dir+this_source+'_source_model_Lorentz_'+reslt+'.fits'
+#     model_hdu = fits.PrimaryHDU(data=mock_map_Lorentz, header=hdr)
+#     model_hdu.writeto(model_file, overwrite=True)
 
     # write the model image with fixed beam size
     model_file = mod_map_dir+this_source+'_source_model_beam_'+reslt+'.fits'
@@ -160,6 +161,6 @@ galaxy_fluxes = {}
 galaxy_fluxes['Name'] = source_list
 galaxy_fluxes['ratio'] = flux_fracs
 
-with open('galaxy_fluxes.pkl', 'wb') as fp:
+with open(mod_map_dir+'galaxy_fluxes.pkl', 'wb') as fp:
     pickle.dump(galaxy_fluxes, fp)
     print('dictionary saved successfully to file')
