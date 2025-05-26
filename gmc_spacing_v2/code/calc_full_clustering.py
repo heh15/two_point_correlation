@@ -1,13 +1,13 @@
 import sys
 sys.path.append('../')
-sys.path.append('../aklpyutils/') 
+sys.path.append('../utilsForTwopt/') 
 
 from key_dirs import *
 from utils_spacing import *
 from astropy.utils.console import ProgressBar
 
-corr_dir = '../corr_results_hi_150pc_arm/'
-sim_dir = root_dir+'sim_results_arm/'
+corr_dir = '../corr_results/'
+sim_dir = root_dir+'sim_results/'
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
@@ -31,13 +31,13 @@ exp_vs_flat_fac = 10
 do_exp_vs_flat = False
 do_monte = False
 
-do_envrm_corr = True
+do_envrm_corr = False
 do_select_bright = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Loop over sources
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
+source_list=['ngc3627']
 for this_source in source_list:
     
     # Define output filenames
@@ -141,7 +141,7 @@ for this_source in source_list:
 
     # ... real vs. flat
     print("... calculating real vs. flat")
-    twopt_real_flat = \
+    twopt_real_flat, twopt_flat_err = \
         calc_twopoint(
             x_real, y_real,
             x_flat, y_flat,
@@ -149,7 +149,7 @@ for this_source in source_list:
     
     # ... real vs. exponential
     print("... calculating real vs. exp")
-    twopt_real_exp = \
+    twopt_real_exp, twopt_exp_err = \
         calc_twopoint(
             x_real, y_real,
             x_exp, y_exp,
@@ -168,7 +168,7 @@ for this_source in source_list:
 
     # ... real vs radial
     print('... calculating real vs rad')
-    twopt_real_rad = \
+    twopt_real_rad, twopt_rad_err = \
         calc_twopoint(
             x_real, y_real,
             x_rad, y_rad,
@@ -176,7 +176,7 @@ for this_source in source_list:
 
     # ... real vs Ico weighted
     print("... calculating real vs Ico")
-    twopt_real_Ico = \
+    twopt_real_Ico, twopt_Ico_err = \
         calc_twopoint(
             x_real, y_real,
             x_Ico, y_Ico, 
@@ -185,6 +185,8 @@ for this_source in source_list:
     # Loop over realizations of random catalogs
     monte_flat_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
     monte_exp_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
+    monte_rad_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
+    monte_Ico_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
 
     print("... monte carlo calculation")
     counter = 0
@@ -279,6 +281,7 @@ for this_source in source_list:
         'xgeo':bins_geo,
         'xhi':bins_hi,
         'twopt':twopt_real_flat,
+        'twopt_err':twopt_flat_err,
         'monte05':monte_flat_05,
         'monte16':monte_flat_16,
         'monte50':monte_flat_50,
@@ -294,6 +297,7 @@ for this_source in source_list:
         'xgeo':bins_geo,
         'xhi':bins_hi,
         'twopt':twopt_real_exp,
+        'twopt_err':twopt_exp_err,
         'monte05':monte_exp_05,
         'monte16':monte_exp_16,
         'monte50':monte_exp_50,
@@ -319,6 +323,7 @@ for this_source in source_list:
         'xgeo':bins_geo,
         'xhi':bins_hi,
         'twopt':twopt_real_rad,
+        'twopt_err':twopt_rad_err,
     }
     tab_real_vs_rad = Table(twopt_real_vs_rad)
     tab_real_vs_rad.write(tabfile_real_vs_rad,format='fits',overwrite=True)
@@ -329,6 +334,7 @@ for this_source in source_list:
         'xgeo':bins_geo,
         'xhi':bins_hi,
         'twopt':twopt_real_Ico,
+        'twopt_err':twopt_Ico_err,
     }
     tab_real_vs_Ico = Table(twopt_real_vs_Ico)
     tab_real_vs_Ico.write(tabfile_real_vs_Ico,format='fits',overwrite=True)

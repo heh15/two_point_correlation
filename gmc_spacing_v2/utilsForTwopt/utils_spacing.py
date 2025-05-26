@@ -265,12 +265,14 @@ def calc_twopoint(
     #test = input('hold')
 
     dd_bins = np.zeros(n_bins)*np.nan
+    N_dd = np.zeros(n_bins) * np.nan
     for ii in range(n_bins):        
         dd_bins[ii] = np.nansum(
             (dist_data_data >= bins_lo[ii]) \
             * (dist_data_data < bins_hi[ii])) \
             * dd_norm
-    
+        N_dd[ii] = dd_bins[ii] / dd_norm / 2 # number of D-D points without duplicate counts (de Lapparent+2007, Eq. 7)
+
     # ..........................................
     # Calculate the rand rand matrix
     # ..........................................
@@ -419,8 +421,9 @@ def calc_twopoint(
     #print(dd_bins[0], dr_bins[0], rr_bins[0])
     
     clustering = 1/rr_bins*(dd_bins - 2.*dr_bins + rr_bins) + 1.
+    err_poisson = clustering / np.sqrt(N_dd)
         
-    return(clustering)
+    return(clustering, err_poisson)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Calculate peak vs. image cross-correlation
