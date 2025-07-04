@@ -21,7 +21,7 @@ mom0_map_dir = root_dir+'data/mom0/'
 # sim_dir =  root_dir+'sim_results/'
 # corr_dir = root_dir+'corr_results/'
 # corr_dir = root_dir + 'corr_150pc_lo_results/'
-derived_root_dir = '/vol/alcina/data1/hhe/two_point_correlation/delivery_v4p0/'
+derived_root_dir = '/vol/alcina/data1/hhe/PHANGS_DATA/delivery_v4p0/'
 # Sample table
 sample_tab_file = root_dir+'phangs_sample_table_v1p6.fits'
 sample_tab = Table.read(sample_tab_file)
