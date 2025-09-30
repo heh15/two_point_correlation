@@ -9,8 +9,8 @@ from utils_spacing import *
 
 from reproject import reproject_interp, reproject_exact
 
-weight_map_dir = root_dir+'weight_maps_arm/'
-sim_dir = root_dir+'sim_results_arm/'
+weight_map_dir = root_dir+'weight_maps_deproj_nocenter/'
+sim_dir = root_dir+'sim_results_deproj_nocenter/'
 
 dry_run = False
 
@@ -43,6 +43,7 @@ for this_source in source_list:
     # Extract the array and coverage file
     this_array = array_dict[this_source]
     this_cov_file = fid_cov_dict[this_source]
+    this_fid_map = mom0_map_dict[this_source] 
     this_fid_broad_map = broad_map_dict[this_source]
     this_fid_strict_mask = strict_mask_dict[this_source]
 
@@ -56,6 +57,11 @@ for this_source in source_list:
     # Read the kpc-scale moment 0 file
     hdulist = fits.open(this_fid_broad_map)
     kpc_mom0_map = hdulist[0].data
+    hdulist.close()
+
+    # read the 150 pc map
+    hdulist = fits.open(this_fid_map)
+    co_mom0_map = hdulist[0].data
     hdulist.close()
 
     # Read the file
@@ -85,14 +91,15 @@ for this_source in source_list:
                 order='nearest-neighbor')
         envrm_mask = envrm_mask.astype(int)
 
+    if do_strict_mask:
         with fits.open(this_fid_strict_mask) as hdul:
             strict_mask = hdul[0].data
         strict_mask = np.max(strict_mask, axis=0)
 
-    # Make the models
+    # Make the models 
     mask = (cov_map > 0.25)
     if do_envrm_mask:
-        mask = mask & (envrm_mask==6)
+        mask = mask & (envrm_mask!=1)
     if do_strict_mask:
         mask = mask & strict_mask 
     
@@ -111,7 +118,7 @@ for this_source in source_list:
     rad_model = rad_model/np.nansum(rad_model)
 
     # change by Hao He (July 1st, 2024), add the model to sample the GMCs based on the kpc-scale CO emission
-    Ico_model = mask*kpc_mom0_map 
+    Ico_model = mask*co_mom0_map 
     Ico_model = Ico_model/np.nansum(Ico_model)
 
     # Write to disk

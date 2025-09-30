@@ -161,8 +161,9 @@ for this_source in source_list:
                 missing_coverage += 1
 
     this_derived_dir = derived_root_dir + this_source + '/'
-    this_fid_broad_map = this_derived_dir + this_source + '_' + array_dict[this_source] + \
-        '_co21_1kpc_broad_mom0.fits'
+#     this_fid_broad_map = this_derived_dir + this_source + '_' + array_dict[this_source] + \
+#         '_co21_1kpc_broad_mom0.fits'
+    this_fid_broad_map = root_dir + 'CO_smooth_1kpc_deproj/'+this_source+'_1kpc_deproj_mom0.fits'
     print(this_fid_broad_map)
     if os.path.isfile(this_fid_broad_map):
         broad_map_dict[this_source] = this_fid_broad_map

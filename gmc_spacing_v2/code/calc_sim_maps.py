@@ -21,6 +21,7 @@ verbose = True
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 flux_fracs = []
+flux_fracs_beam = []
 # source_list = ['ngc3627']
 for this_source in source_list:
 
@@ -121,6 +122,7 @@ for this_source in source_list:
     flux_frac = np.nansum(mock_map_elptc) / np.nansum(mom0_map)
     print(flux_frac)
     flux_fracs.append(flux_frac)
+    flux_fracs_beam.append(np.nansum(mock_map_elptc) / np.nansum(mom0_map))
 
     # Make the model map by adding the emission not captured by GMC catalogs
     ratio = np.nansum(mom0_map) * (1-flux_frac) / np.nansum(strict_mask_1kpc)

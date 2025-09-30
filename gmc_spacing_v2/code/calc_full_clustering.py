@@ -5,9 +5,10 @@ sys.path.append('../utilsForTwopt/')
 from key_dirs import *
 from utils_spacing import *
 from astropy.utils.console import ProgressBar
+from astropy.table import hstack
 
-corr_dir = '../corr_results/'
-sim_dir = root_dir+'sim_results/'
+corr_dir = '../corr_results_deproj_nocenter/'
+sim_dir = root_dir+'sim_results_deproj_nocenter/'
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
@@ -31,13 +32,16 @@ exp_vs_flat_fac = 10
 do_exp_vs_flat = False
 do_monte = False
 
-do_envrm_corr = False
+do_envrm_corr = True
 do_select_bright = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Loop over sources
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-source_list=['ngc3627']
+# source_list=['ngc3627']
+if do_envrm_corr == True:
+    source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']]
+
 for this_source in source_list:
     
     # Define output filenames
@@ -62,8 +66,11 @@ for this_source in source_list:
     
     # Read fiducial catalog
     this_real_cat = Table.read(fid_cat_dict[this_source].replace('_props.fits','_props_valueadded.fits'))
+    # read the new catalog for 150 pc
+    this_real_cat_new = Table.read('../cloud_cats_2024/gmc_cats_150pc_46mK/PHANGS_'+this_source+'_150pc_46mK_gmccat.fits')
+    this_real_cat = hstack([this_real_cat, this_real_cat_new[['SIMPLE_ENVIROFLAG']]])
     if do_envrm_corr == True:
-        this_real_cat = this_real_cat[this_real_cat['ENV_ARM']==1] 
+        this_real_cat = this_real_cat[this_real_cat['SIMPLE_ENVIROFLAG']!=1] 
     if do_select_bright == True:
         this_real_cat = this_real_cat[this_real_cat['TMAX_K']>0.5]
     if len(this_real_cat) < thresh_cloud_count:
@@ -206,6 +213,12 @@ for this_source in source_list:
 
             flat_mask = np.zeros_like(x_flat)
             flat_mask[counter:counter+n_clouds] = 1
+
+            rad_mask = np.zeros_like(x_rad)
+            rad_mask[counter:counter+n_clouds] = 1
+
+            Ico_mask = np.zeros_like(x_Ico)
+            Ico_mask[counter:counter+n_clouds] = 1
             
             monte_exp_x_data = x_exp[exp_mask==1]
             monte_exp_y_data = y_exp[exp_mask==1]
@@ -218,23 +231,50 @@ for this_source in source_list:
 
             monte_flat_x_rand = x_flat[flat_mask==0]
             monte_flat_y_rand = y_flat[flat_mask==0]
+
+            monte_rad_x_data = x_rad[rad_mask==1]
+            monte_rad_y_data = y_rad[rad_mask==1]
+
+            monte_rad_x_rand = x_rad[rad_mask==0]
+            monte_rad_y_rand = y_rad[rad_mask==0]
+
+            monte_Ico_x_data = x_Ico[Ico_mask==1]
+            monte_Ico_y_data = y_Ico[Ico_mask==1]
             
+            monte_Ico_x_rand = x_Ico[Ico_mask==0]
+            monte_Ico_y_rand = y_Ico[Ico_mask==0]
+           
             counter += n_clouds
 
-            this_twopt_monte_flat = \
+            this_twopt_monte_flat, _ = \
                 calc_twopoint(
                     monte_flat_x_data, monte_flat_y_data,
                     monte_flat_x_rand, monte_flat_y_rand,
                     bins_lo, bins_hi, verbose=False)
         
-            this_twopt_monte_exp = \
+            this_twopt_monte_exp, _ = \
                 calc_twopoint(
                     monte_exp_x_data, monte_exp_y_data,
                     monte_exp_x_rand, monte_exp_y_rand,
                     bins_lo, bins_hi, verbose=False)
-            
+           
+            this_twopt_monte_rad, _ = \
+                calc_twopoint(
+                    monte_rad_x_data, monte_rad_y_data,
+                    monte_rad_x_rand, monte_rad_y_rand,
+                    bins_lo, bins_hi, verbose=False)
+
+            this_twopt_monte_Ico, _ = \
+                calc_twopoint(
+                    monte_Ico_x_data, monte_Ico_y_data,
+                    monte_Ico_x_rand, monte_Ico_y_rand,
+                    bins_lo, bins_hi, verbose=False)
+
+            print(np.shape(monte_flat_twopt))
             monte_flat_twopt[ii,:] = this_twopt_monte_flat
             monte_exp_twopt[ii,:] = this_twopt_monte_exp
+            monte_rad_twopt[ii,:] = this_twopt_monte_rad
+            monte_Ico_twopt[ii,:] = this_twopt_monte_Ico
 
             bar.update()
         
@@ -254,6 +294,18 @@ for this_source in source_list:
     monte_exp_84 = np.zeros(nbins)*np.nan
     monte_exp_95 = np.zeros(nbins)*np.nan
     
+    monte_rad_05 = np.zeros(nbins)*np.nan
+    monte_rad_16 = np.zeros(nbins)*np.nan
+    monte_rad_50 = np.zeros(nbins)*np.nan
+    monte_rad_84 = np.zeros(nbins)*np.nan
+    monte_rad_95 = np.zeros(nbins)*np.nan
+
+    monte_Ico_05 = np.zeros(nbins)*np.nan
+    monte_Ico_16 = np.zeros(nbins)*np.nan
+    monte_Ico_50 = np.zeros(nbins)*np.nan
+    monte_Ico_84 = np.zeros(nbins)*np.nan
+    monte_Ico_95 = np.zeros(nbins)*np.nan
+
     for ii in range(nbins):
 
         if do_monte == False:
@@ -261,6 +313,8 @@ for this_source in source_list:
             
         this_monte_flat_bin = monte_flat_twopt[:,ii]
         this_monte_exp_bin = monte_exp_twopt[:,ii]
+        this_monte_rad_bin = monte_rad_twopt[:,ii]
+        this_monte_Ico_bin = monte_Ico_twopt[:,ii]
         
         monte_flat_05[ii] = np.percentile(this_monte_flat_bin,5)
         monte_flat_16[ii] = np.percentile(this_monte_flat_bin,16)
@@ -273,7 +327,19 @@ for this_source in source_list:
         monte_exp_50[ii] = np.percentile(this_monte_exp_bin,50)
         monte_exp_84[ii] = np.percentile(this_monte_exp_bin,84)
         monte_exp_95[ii] = np.percentile(this_monte_exp_bin,95)
-              
+
+        monte_rad_05[ii] = np.percentile(this_monte_rad_bin,5)
+        monte_rad_16[ii] = np.percentile(this_monte_rad_bin,16)
+        monte_rad_50[ii] = np.percentile(this_monte_rad_bin,50)
+        monte_rad_84[ii] = np.percentile(this_monte_rad_bin,84)
+        monte_rad_95[ii] = np.percentile(this_monte_rad_bin,95)
+    
+        monte_Ico_05[ii] = np.percentile(this_monte_Ico_bin,5)
+        monte_Ico_16[ii] = np.percentile(this_monte_Ico_bin,16)
+        monte_Ico_50[ii] = np.percentile(this_monte_Ico_bin,50)
+        monte_Ico_84[ii] = np.percentile(this_monte_Ico_bin,84)
+        monte_Ico_95[ii] = np.percentile(this_monte_Ico_bin,95)
+
     # Write to disk
     twopt_real_vs_flat = {
         'xlo':bins_lo,
@@ -324,6 +390,11 @@ for this_source in source_list:
         'xhi':bins_hi,
         'twopt':twopt_real_rad,
         'twopt_err':twopt_rad_err,
+        'monte05':monte_rad_05,
+        'monte16':monte_rad_16,
+        'monte50':monte_rad_50,
+        'monte84':monte_rad_84,
+        'monte95':monte_rad_95,
     }
     tab_real_vs_rad = Table(twopt_real_vs_rad)
     tab_real_vs_rad.write(tabfile_real_vs_rad,format='fits',overwrite=True)
@@ -335,6 +406,11 @@ for this_source in source_list:
         'xhi':bins_hi,
         'twopt':twopt_real_Ico,
         'twopt_err':twopt_Ico_err,
+        'monte05':monte_Ico_05,
+        'monte16':monte_Ico_16,
+        'monte50':monte_Ico_50,
+        'monte84':monte_Ico_84,
+        'monte95':monte_Ico_95,
     }
     tab_real_vs_Ico = Table(twopt_real_vs_Ico)
     tab_real_vs_Ico.write(tabfile_real_vs_Ico,format='fits',overwrite=True)
