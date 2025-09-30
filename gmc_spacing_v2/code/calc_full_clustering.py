@@ -7,8 +7,8 @@ from utils_spacing import *
 from astropy.utils.console import ProgressBar
 from astropy.table import hstack
 
-corr_dir = '../corr_results_deproj_nocenter/'
-sim_dir = root_dir+'sim_results_deproj_nocenter/'
+corr_dir = '../corr_results_deproj_ndens/'
+sim_dir = root_dir+'sim_results_deproj_ndens/'
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
@@ -32,7 +32,7 @@ exp_vs_flat_fac = 10
 do_exp_vs_flat = False
 do_monte = False
 
-do_envrm_corr = True
+do_envrm_corr = False
 do_select_bright = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -51,6 +51,7 @@ for this_source in source_list:
     tabfile_real_vs_rad = corr_dir + this_source + '_realvsrad.fits'
     tabfile_real_vs_Ico = corr_dir + this_source + '_realvsIco.fits'
     tabfile_Ico_vs_exp = corr_dir + this_source + '_Icovsexp.fits'
+    tabfile_real_vs_ngmc = corr_dir + this_source + '_realvsngmc.fits'
 
     # Extract source information
     this_row = deets_dict[this_source] 
@@ -136,6 +137,19 @@ for this_source in source_list:
 
     n_Ico = len(x_Ico)
 
+    # ... Ico catalog
+    ngmc_sim_dir = sim_dir + 'ngmc/'
+    this_ngmc_cat_file = ngmc_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_ngmc.fits'
+    this_ngmc_cat = Table.read(this_ngmc_cat_file)
+
+    x_ngmc = this_ngmc_cat['dx']*deg_to_pc
+    y_ngmc = this_ngmc_cat['dy']*deg_to_pc
+
+    x_ngmc = x_ngmc[0:n_sim_to_use]
+    y_ngmc = y_ngmc[0:n_sim_to_use]
+
+    n_ngmc = len(x_ngmc)
+
     if verbose:
         print("")
         print("... galaxy: ", this_source)
@@ -189,11 +203,20 @@ for this_source in source_list:
             x_Ico, y_Ico, 
             bins_lo, bins_hi)
 
+    # ... real vs Ico weighted
+    print("... calculating real vs ngmc")
+    twopt_real_ngmc, twopt_ngmc_err = \
+        calc_twopoint(
+            x_real, y_real,
+            x_ngmc, y_ngmc,
+            bins_lo, bins_hi)
+
     # Loop over realizations of random catalogs
     monte_flat_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
     monte_exp_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
     monte_rad_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
     monte_Ico_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
+    monte_ngmc_twopt = np.zeros((cat_iter_fac,nbins))*np.nan
 
     print("... monte carlo calculation")
     counter = 0
@@ -219,6 +242,9 @@ for this_source in source_list:
 
             Ico_mask = np.zeros_like(x_Ico)
             Ico_mask[counter:counter+n_clouds] = 1
+
+            ngmc_mask = np.zeros_like(x_ngmc)
+            ngmc_mask[counter:counter+n_clouds] = 1
             
             monte_exp_x_data = x_exp[exp_mask==1]
             monte_exp_y_data = y_exp[exp_mask==1]
@@ -243,6 +269,12 @@ for this_source in source_list:
             
             monte_Ico_x_rand = x_Ico[Ico_mask==0]
             monte_Ico_y_rand = y_Ico[Ico_mask==0]
+
+            monte_ngmc_x_data = x_ngmc[ngmc_mask==1]
+            monte_ngmc_y_data = y_ngmc[ngmc_mask==1]
+
+            monte_ngmc_x_rand = x_ngmc[ngmc_mask==0]
+            monte_ngmc_y_rand = y_ngmc[ngmc_mask==0]
            
             counter += n_clouds
 
@@ -270,11 +302,18 @@ for this_source in source_list:
                     monte_Ico_x_rand, monte_Ico_y_rand,
                     bins_lo, bins_hi, verbose=False)
 
+            this_twopt_monte_ngmc, _ = \
+                calc_twopoint(
+                    monte_ngmc_x_data, monte_ngmc_y_data,
+                    monte_ngmc_x_rand, monte_ngmc_y_rand,
+                    bins_lo, bins_hi, verbose=False)
+
             print(np.shape(monte_flat_twopt))
             monte_flat_twopt[ii,:] = this_twopt_monte_flat
             monte_exp_twopt[ii,:] = this_twopt_monte_exp
             monte_rad_twopt[ii,:] = this_twopt_monte_rad
             monte_Ico_twopt[ii,:] = this_twopt_monte_Ico
+            monte_ngmc_twopt[ii,:] = this_twopt_monte_ngmc
 
             bar.update()
         
@@ -305,6 +344,12 @@ for this_source in source_list:
     monte_Ico_50 = np.zeros(nbins)*np.nan
     monte_Ico_84 = np.zeros(nbins)*np.nan
     monte_Ico_95 = np.zeros(nbins)*np.nan
+
+    monte_ngmc_05 = np.zeros(nbins)*np.nan
+    monte_ngmc_16 = np.zeros(nbins)*np.nan
+    monte_ngmc_50 = np.zeros(nbins)*np.nan
+    monte_ngmc_84 = np.zeros(nbins)*np.nan
+    monte_ngmc_95 = np.zeros(nbins)*np.nan
 
     for ii in range(nbins):
 
@@ -339,6 +384,12 @@ for this_source in source_list:
         monte_Ico_50[ii] = np.percentile(this_monte_Ico_bin,50)
         monte_Ico_84[ii] = np.percentile(this_monte_Ico_bin,84)
         monte_Ico_95[ii] = np.percentile(this_monte_Ico_bin,95)
+
+        monte_ngmc_05[ii] = np.percentile(this_monte_ngmc_bin,5)
+        monte_ngmc_16[ii] = np.percentile(this_monte_ngmc_bin,16)
+        monte_ngmc_50[ii] = np.percentile(this_monte_ngmc_bin,50)
+        monte_ngmc_84[ii] = np.percentile(this_monte_ngmc_bin,84)
+        monte_ngmc_95[ii] = np.percentile(this_monte_ngmc_bin,95)
 
     # Write to disk
     twopt_real_vs_flat = {
@@ -414,3 +465,19 @@ for this_source in source_list:
     }
     tab_real_vs_Ico = Table(twopt_real_vs_Ico)
     tab_real_vs_Ico.write(tabfile_real_vs_Ico,format='fits',overwrite=True)
+
+    twopt_real_vs_ngmc = {
+        'xlo':bins_lo,
+        'xmid':bins_mid,
+        'xgeo':bins_geo,
+        'xhi':bins_hi,
+        'twopt':twopt_real_ngmc,
+        'twopt_err':twopt_ngmc_err,
+        'monte05':monte_ngmc_05,
+        'monte16':monte_ngmc_16,
+        'monte50':monte_ngmc_50,
+        'monte84':monte_ngmc_84,
+        'monte95':monte_ngmc_95,
+    }
+    tab_real_vs_ngmc = Table(twopt_real_vs_ngmc)
+    tab_real_vs_ngmc.write(tabfile_real_vs_ngmc,format='fits',overwrite=True)

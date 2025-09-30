@@ -20,6 +20,9 @@ import scipy.stats
 import os.path
 import sys
 
+from astropy.convolution import convolve, Gaussian2DKernel, convolve_fft
+from astropy.wcs.utils import proj_plane_pixel_scales
+
 # from aklpyutils.utils_deproject import deproject
 from utils_deproject import deproject
 
@@ -424,6 +427,42 @@ def calc_twopoint(
     err_poisson = clustering / np.sqrt(N_dd)
         
     return(clustering, err_poisson)
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Make a smoothed distribution of clouds/clusters at 1 kpc scale
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+def make_smooth_model(image_shape, wcs, cat_coords, 
+                     pa, incl, dist, mask):
+    '''
+    Make a smoothed version of real data distribution
+    '''
+
+    # Initialize the model 
+    model = np.full(image_shape, fill_value = 0)
+
+    # sample the model with catalogs
+    x_pixs, y_pixs = wcs.world_to_pixel(cat_coords)
+    x_pixs = np.floor(x_pixs).astype(int)
+    y_pixs = np.floor(y_pixs).astype(int)
+    model[y_pixs, x_pixs] = 1
+    
+    # Smooth the model by an elliptical Gaussian with FWHM of 1 kpc
+    sigma_maj_arcsec = 1000 / 2.354 / dist / 4.848
+    pix_deg = proj_plane_pixel_scales(wcs)[0]
+    pix_arcsec = ((pix_deg * u.deg).to(u.arcsec)).value
+    sigma_maj_pix = sigma_maj_arcsec / pix_arcsec
+    sigma_min_pix = sigma_maj_pix * math.cos(incl/180*np.pi)
+    kernel = Gaussian2DKernel(x_stddev=sigma_maj_pix, 
+                            y_stddev=sigma_min_pix, 
+                            theta=pa/180*math.pi+math.pi/2)
+    model = convolve_fft(model, kernel)
+
+    # mask the pixels outside the field of view
+    model[~mask] = 0
+    model = model / np.nansum(model)
+
+    return model
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Calculate peak vs. image cross-correlation

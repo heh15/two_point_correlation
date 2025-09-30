@@ -8,16 +8,18 @@ from key_dirs import *
 from utils_spacing import *
 
 from reproject import reproject_interp, reproject_exact
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 
-weight_map_dir = root_dir+'weight_maps_deproj_nocenter/'
-sim_dir = root_dir+'sim_results_deproj_nocenter/'
+weight_map_dir = root_dir+'weight_maps_deproj_ndens/'
+sim_dir = root_dir+'sim_results_deproj_ndens/'
 
 dry_run = False
 
 niters = 1e4
 verbose = True
 
-do_envrm_mask = True
+do_envrm_mask = False
 do_strict_mask = False
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -28,7 +30,7 @@ do_strict_mask = False
 if do_envrm_mask:
     source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']] 
 
-
+# source_list = ['ngc3627']
 for this_source in source_list:
 
     # Extract details for this source
@@ -39,6 +41,12 @@ for this_source in source_list:
     this_incl = this_row['orient_incl']
     this_dist = this_row['dist']
     this_lstar_deg = this_row['size_scalelength']/3600.
+
+    # read the catalog
+    this_cat = Table.read(fid_cat_dict[this_source])
+    cat_coords = SkyCoord(this_cat['XMAX_DEG']*u.deg, this_cat['YMAX_DEG']*u.deg)
+    peak_ra = this_cat['XMAX_DEG']
+    peak_dec = this_cat['YMAX_DEG']
 
     # Extract the array and coverage file
     this_array = array_dict[this_source]
@@ -121,11 +129,16 @@ for this_source in source_list:
     Ico_model = mask*co_mom0_map 
     Ico_model = Ico_model/np.nansum(Ico_model)
 
+    # Add the smoothed number density as a model map
+    ngmc_model = make_smooth_model(np.shape(cov_map), wcs, cat_coords,
+            this_pa, this_incl, this_dist, mask) 
+
     # Write to disk
     flat_model_file = weight_map_dir+this_source+'_flat_model.fits'
     exp_model_file = weight_map_dir+this_source+'_exp_model.fits'
     rad_model_file = weight_map_dir+this_source+'_rad_model.fits'
     Ico_model_file = weight_map_dir+this_source+'_Ico_model.fits'
+    ngmc_model_file = weight_map_dir+this_source+'_ngmc_model.fits'
 
     flat_hdu = fits.PrimaryHDU(data=flat_model,header=hdr)
     flat_hdu.writeto(flat_model_file, overwrite=True)
@@ -138,6 +151,9 @@ for this_source in source_list:
 
     Ico_hdu = fits.PrimaryHDU(data=Ico_model, header=hdr)
     Ico_hdu.writeto(Ico_model_file, overwrite=True)
+
+    ngmc_hdu = fits.PrimaryHDU(data=ngmc_model, header=hdr)
+    ngmc_hdu.writeto(ngmc_model_file, overwrite=True)
 
     # Read the fiducial catalog
     this_cat = fid_cat_dict[this_source]
@@ -155,6 +171,9 @@ for this_source in source_list:
 
     this_sim_dir = sim_dir+'Ico/'
     Ico_cat_outfile = this_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_Ico.fits'
+
+    this_sim_dir = sim_dir+'ngmc/'
+    ngmc_cat_outfile = this_sim_dir+this_source+'_'+senstvt+'_'+reslt+'_ngmc.fits'
 
     if verbose:
         print("Placing clouds:")
@@ -177,4 +196,8 @@ for this_source in source_list:
             print(this_source)
         place_nclouds_in_map(
             Ico_model_file, n_clouds_to_place, Ico_cat_outfile,
+            this_ra, this_dec, this_pa, this_incl)
+
+        place_nclouds_in_map(
+            ngmc_model_file, n_clouds_to_place, ngmc_cat_outfile,
             this_ra, this_dec, this_pa, this_incl)
