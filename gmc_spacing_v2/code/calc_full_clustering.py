@@ -7,8 +7,8 @@ from utils_spacing import *
 from astropy.utils.console import ProgressBar
 from astropy.table import hstack
 
-corr_dir = '../corr_results_deproj_ndens/'
-sim_dir = root_dir+'sim_results_deproj_ndens/'
+corr_dir = '../corr_results_deproj_test/'
+sim_dir = root_dir+'sim_results_deproj_test/'
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Define bins and other tuning parameters
@@ -40,7 +40,8 @@ do_select_bright = False
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # source_list=['ngc3627']
 if do_envrm_corr == True:
-    source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']]
+#     source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']]
+    source_list = [source for source in source_list if source not in ['ngc4596']]
 
 for this_source in source_list:
     
@@ -61,17 +62,20 @@ for this_source in source_list:
     this_incl = this_row['orient_incl']
     this_dist = this_row['dist']
     this_center_coord = [this_ra, this_dec]
+    this_lstar_deg = this_row['size_scalelength']/3600.
 
     # Deg to physics
     deg_to_pc = this_dist*1e6*np.pi/180.
     
     # Read fiducial catalog
     this_real_cat = Table.read(fid_cat_dict[this_source].replace('_props.fits','_props_valueadded.fits'))
-    # read the new catalog for 150 pc
-    this_real_cat_new = Table.read('../cloud_cats_2024/gmc_cats_150pc_46mK/PHANGS_'+this_source+'_150pc_46mK_gmccat.fits')
-    this_real_cat = hstack([this_real_cat, this_real_cat_new[['SIMPLE_ENVIROFLAG']]])
+    # # read the new catalog for 150 pc
+    # this_real_cat_new = Table.read('../cloud_cats_2024/gmc_cats_150pc_46mK/PHANGS_'+this_source+'_150pc_46mK_gmccat.fits')
+    # this_real_cat = hstack([this_real_cat, this_real_cat_new[['SIMPLE_ENVIROFLAG']]])
     if do_envrm_corr == True:
-        this_real_cat = this_real_cat[this_real_cat['SIMPLE_ENVIROFLAG']!=1] 
+#         this_real_cat = this_real_cat[this_real_cat['SIMPLE_ENVIROFLAG']!=1] 
+        mask = (this_real_cat['RGAL_DEG'] > 0.25 * this_lstar_deg)
+        this_real_cat = this_real_cat[mask]
     if do_select_bright == True:
         this_real_cat = this_real_cat[this_real_cat['TMAX_K']>0.5]
     if len(this_real_cat) < thresh_cloud_count:

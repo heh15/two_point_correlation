@@ -11,12 +11,12 @@ from reproject import reproject_interp, reproject_exact
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 
-weight_map_dir = root_dir+'weight_maps_deproj_ndens/'
-sim_dir = root_dir+'sim_results_deproj_ndens/'
+weight_map_dir = root_dir+'weight_maps_deproj_test/'
+sim_dir = root_dir+'sim_results_deproj_test/'
 
 dry_run = False
 
-niters = 1e4
+niters = 1e2
 verbose = True
 
 do_envrm_mask = False
@@ -28,7 +28,8 @@ do_strict_mask = False
 
 # temporarily remove ngc0253 since it does not have environmental mask
 if do_envrm_mask:
-    source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']] 
+#     source_list = [source for source in source_list if source not in ['ngc0253','ngc0300', 'ngc3489', 'ngc4459', 'ngc4476', 'ngc4477', 'ngc4596', 'ngc5236', 'ngc7793']] 
+    source_list = [source for source in source_list if source not in ['ngc4596']]
 
 # source_list = ['ngc3627']
 for this_source in source_list:
@@ -93,11 +94,12 @@ for this_source in source_list:
 
     # import the environment mask
     if do_envrm_mask:
-        hdulist = fits.open('../envrm_mask/masks_v5_simple/'+this_source.upper()+'_simple.fits')
-        # reproject environment mask to the moment maps
-        envrm_mask, _ = reproject_interp(hdulist, wcs, shape_out=np.shape(cov_map),
-                order='nearest-neighbor')
-        envrm_mask = envrm_mask.astype(int)
+        envrm_mask = (radius_map > 0.25*this_lstar_deg)
+#         hdulist = fits.open('../envrm_mask/masks_v5_simple/'+this_source.upper()+'_simple.fits')
+#         # reproject environment mask to the moment maps
+#         envrm_mask, _ = reproject_interp(hdulist, wcs, shape_out=np.shape(cov_map),
+#                 order='nearest-neighbor')
+#         envrm_mask = envrm_mask.astype(int)
 
     if do_strict_mask:
         with fits.open(this_fid_strict_mask) as hdul:
@@ -107,7 +109,7 @@ for this_source in source_list:
     # Make the models 
     mask = (cov_map > 0.25)
     if do_envrm_mask:
-        mask = mask & (envrm_mask!=1)
+        mask = mask & envrm_mask
     if do_strict_mask:
         mask = mask & strict_mask 
     
